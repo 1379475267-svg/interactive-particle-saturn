@@ -214,6 +214,12 @@ ringGeometry.setAttribute("position", new THREE.BufferAttribute(ringPositions, 3
 ringGeometry.setAttribute("aSize", new THREE.BufferAttribute(ringSizes, 1));
 ringGeometry.setAttribute("color", new THREE.BufferAttribute(ringColors, 3));
 
+const ringTrailPositions = new Float32Array(ringPositions);
+const ringTrailGeometry = new THREE.BufferGeometry();
+ringTrailGeometry.setAttribute("position", new THREE.BufferAttribute(ringTrailPositions, 3));
+ringTrailGeometry.setAttribute("aSize", new THREE.BufferAttribute(ringSizes, 1));
+ringTrailGeometry.setAttribute("color", new THREE.BufferAttribute(ringColors, 3));
+
 const ringMaterial = new THREE.ShaderMaterial({
   transparent: true,
   depthWrite: false,
@@ -252,6 +258,164 @@ const ringMaterial = new THREE.ShaderMaterial({
 
 const ringPoints = new THREE.Points(ringGeometry, ringMaterial);
 ringGroup.add(ringPoints);
+
+const ringTrailMaterial = new THREE.ShaderMaterial({
+  transparent: true,
+  depthWrite: false,
+  vertexColors: true,
+  blending: THREE.AdditiveBlending,
+  uniforms: {
+    uPixelRatio: { value: renderer.getPixelRatio() },
+    uBrightness: { value: 1 },
+    uPulse: { value: 0 },
+  },
+  vertexShader: `
+    attribute float aSize;
+    varying vec3 vColor;
+    uniform float uPixelRatio;
+    uniform float uBrightness;
+    uniform float uPulse;
+
+    void main() {
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+      gl_PointSize = (5.0 + aSize * 10.0 + uPulse * 4.0) * uPixelRatio / max(1.0, -mvPosition.z * 0.1);
+      vColor = color;
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float dist = length(uv);
+      float alpha = smoothstep(0.5, 0.0, dist) * 0.18;
+      gl_FragColor = vec4(vColor * 0.8, alpha);
+    }
+  `,
+});
+
+const ringTrailPoints = new THREE.Points(ringTrailGeometry, ringTrailMaterial);
+ringGroup.add(ringTrailPoints);
+
+const dustCount = 9000;
+const dustPositions = new Float32Array(dustCount * 3);
+const dustSizes = new Float32Array(dustCount);
+const dustColors = new Float32Array(dustCount * 3);
+const dustState = [];
+
+for (let i = 0; i < dustCount; i += 1) {
+  const idx = i * 3;
+  const radius = THREE.MathUtils.lerp(6.2, 15.8, Math.pow(Math.random(), 0.7));
+  const angle = Math.random() * Math.PI * 2;
+  const height = THREE.MathUtils.randFloatSpread(0.6);
+  dustPositions[idx] = Math.cos(angle) * radius;
+  dustPositions[idx + 1] = height;
+  dustPositions[idx + 2] = Math.sin(angle) * radius;
+  dustSizes[i] = Math.random();
+  const color = ringColor.clone().lerp(new THREE.Color(0xfff6df), Math.random() * 0.55);
+  dustColors[idx] = color.r;
+  dustColors[idx + 1] = color.g;
+  dustColors[idx + 2] = color.b;
+  dustState.push({
+    radius,
+    angle,
+    height,
+    drift: 0.2 + Math.random() * 0.5,
+    phase: Math.random() * Math.PI * 2,
+  });
+}
+
+const dustGeometry = new THREE.BufferGeometry();
+dustGeometry.setAttribute("position", new THREE.BufferAttribute(dustPositions, 3));
+dustGeometry.setAttribute("aSize", new THREE.BufferAttribute(dustSizes, 1));
+dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
+
+const dustMaterial = new THREE.ShaderMaterial({
+  transparent: true,
+  depthWrite: false,
+  vertexColors: true,
+  blending: THREE.AdditiveBlending,
+  uniforms: {
+    uPixelRatio: { value: renderer.getPixelRatio() },
+    uBrightness: { value: 1 },
+    uPulse: { value: 0 },
+  },
+  vertexShader: `
+    attribute float aSize;
+    varying vec3 vColor;
+    uniform float uPixelRatio;
+    uniform float uBrightness;
+    uniform float uPulse;
+
+    void main() {
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+      gl_PointSize = (3.5 + aSize * 6.0 + uPulse * 1.5) * uPixelRatio / max(1.0, -mvPosition.z * 0.11);
+      vColor = color;
+    }
+  `,
+  fragmentShader: `
+    varying vec3 vColor;
+
+    void main() {
+      vec2 uv = gl_PointCoord - 0.5;
+      float dist = length(uv);
+      float alpha = smoothstep(0.5, 0.0, dist) * 0.24;
+      gl_FragColor = vec4(vColor, alpha);
+    }
+  `,
+});
+
+const dustPoints = new THREE.Points(dustGeometry, dustMaterial);
+ringGroup.add(dustPoints);
+
+const shockwave = new THREE.Mesh(
+  new THREE.TorusGeometry(8.6, 0.18, 48, 240),
+  new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+    uniforms: {
+      uTime: { value: 0 },
+      uPulse: { value: 0 },
+      uProgress: { value: 0 },
+      uColor: { value: new THREE.Color(0xdff6ff) },
+    },
+    vertexShader: `
+      uniform float uPulse;
+      uniform float uProgress;
+      varying vec2 vUv;
+      varying float vWave;
+
+      void main() {
+        vUv = uv;
+        vec3 transformed = position;
+        float wave = sin(uv.x * 10.0 + uProgress * 14.0) * 0.06 * (0.3 + uPulse);
+        transformed += normal * (uProgress * 1.8 + wave);
+        vWave = wave;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+      }
+    `,
+    fragmentShader: `
+      uniform vec3 uColor;
+      uniform float uPulse;
+      uniform float uProgress;
+      varying vec2 vUv;
+      varying float vWave;
+
+      void main() {
+        float band = smoothstep(0.18, 0.48, uProgress) * (1.0 - smoothstep(0.72, 1.0, uProgress));
+        float rim = pow(1.0 - abs(vUv.y - 0.5) * 2.0, 2.0);
+        float alpha = band * rim * (0.18 + uPulse * 0.45) + abs(vWave) * 0.6;
+        gl_FragColor = vec4(uColor * (0.7 + uPulse * 0.8), alpha);
+      }
+    `,
+  }),
+);
+shockwave.rotation.x = Math.PI / 2;
+shockwave.visible = false;
+ringGroup.add(shockwave);
 ringGroup.rotation.x = THREE.MathUtils.degToRad(67);
 ringGroup.rotation.z = THREE.MathUtils.degToRad(14);
 
@@ -298,6 +462,9 @@ const state = {
   pulse: 0,
   pulseTarget: 0,
   infoOpen: false,
+  orbitSpin: 0,
+  shockwave: 0,
+  shockwaveActive: false,
 };
 
 const pointer = {
@@ -324,6 +491,9 @@ function setInfoOpen(nextOpen) {
 function triggerBurst(intensity = 1) {
   state.pulseTarget = Math.max(state.pulseTarget, intensity);
   state.opennessTarget = THREE.MathUtils.clamp(state.opennessTarget + 0.24 * intensity, 0, 1);
+  state.shockwave = 0.001;
+  state.shockwaveActive = true;
+  shockwave.visible = true;
   setStatus("Energy burst triggered.", true);
 }
 
@@ -382,6 +552,8 @@ function orbitPoint(params, time, chaos, pulse) {
 function updateRing(time) {
   const positionAttr = ringGeometry.getAttribute("position");
   const positions = positionAttr.array;
+  const trailAttr = ringTrailGeometry.getAttribute("position");
+  const trailPositions = trailAttr.array;
   const scale = state.scale;
 
   for (let i = 0; i < ringCount; i += 1) {
@@ -390,9 +562,14 @@ function updateRing(time) {
     positions[idx] = point.x * scale;
     positions[idx + 1] = point.y * scale;
     positions[idx + 2] = point.z * scale;
+
+    trailPositions[idx] = THREE.MathUtils.lerp(trailPositions[idx], positions[idx], 0.11);
+    trailPositions[idx + 1] = THREE.MathUtils.lerp(trailPositions[idx + 1], positions[idx + 1], 0.11);
+    trailPositions[idx + 2] = THREE.MathUtils.lerp(trailPositions[idx + 2], positions[idx + 2], 0.11);
   }
 
   positionAttr.needsUpdate = true;
+  trailAttr.needsUpdate = true;
 }
 
 function updateCore(time) {
@@ -432,6 +609,32 @@ function updateCore(time) {
   positionAttr.needsUpdate = true;
 }
 
+function updateDust(time) {
+  const positionAttr = dustGeometry.getAttribute("position");
+  const positions = positionAttr.array;
+  const scale = state.scale;
+
+  for (let i = 0; i < dustCount; i += 1) {
+    const idx = i * 3;
+    const particle = dustState[i];
+    const angle = particle.angle + time * particle.drift * (1 + state.pulse * 0.2);
+    const radius =
+      particle.radius +
+      Math.sin(time * 0.7 + particle.phase) * 0.18 +
+      state.chaos * Math.sin(time * 3.4 + particle.phase) * 0.45;
+    const height =
+      particle.height +
+      Math.cos(time * 0.9 + particle.phase * 0.5) * 0.08 +
+      state.pulse * Math.sin(time * 5.1 + particle.phase) * 0.12;
+
+    positions[idx] = Math.cos(angle) * radius * scale;
+    positions[idx + 1] = height * scale;
+    positions[idx + 2] = Math.sin(angle) * radius * scale;
+  }
+
+  positionAttr.needsUpdate = true;
+}
+
 function updateVisualState(time, delta) {
   state.intro = THREE.MathUtils.damp(state.intro, 1, 0.85, delta);
   state.pulse = THREE.MathUtils.damp(state.pulse, state.pulseTarget, 5.5, delta);
@@ -441,8 +644,16 @@ function updateVisualState(time, delta) {
   state.brightness = THREE.MathUtils.lerp(0.34, 1.18, Math.pow(state.scale / 3.95, 0.92));
   state.chaos = THREE.MathUtils.smoothstep(state.scale, 2.8, 3.95);
   state.burst = THREE.MathUtils.smoothstep(state.scale, 3.3, 3.95);
+  if (state.shockwaveActive) {
+    state.shockwave = Math.min(1.1, state.shockwave + delta * (1.35 + state.pulse * 0.5));
+    if (state.shockwave >= 1.05) {
+      state.shockwaveActive = false;
+      shockwave.visible = false;
+    }
+  }
 
-  saturnSystem.rotation.y += 0.0008 + state.scale * 0.0004;
+  state.orbitSpin += delta * (0.22 + state.scale * 0.08);
+  saturnSystem.rotation.y = pointer.rotY + state.orbitSpin;
   saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.03 + pointer.normX * 0.04;
   saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.normY * 0.24;
   saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.normX * 0.42, 2.1, delta);
@@ -454,39 +665,56 @@ function updateVisualState(time, delta) {
   coreMaterial.uniforms.uBrightness.value = state.brightness;
   coreMaterial.uniforms.uPulse.value = state.pulse;
 
-  const blendedCoreColor = baseSaturnColor.clone().lerp(chaosColor, state.chaos * 0.35 + state.pulse * 0.1);
+  const blendedCoreColor = baseSaturnColor
+    .clone()
+    .lerp(chaosColor, state.chaos * 0.35 + state.pulse * 0.18);
   coreMaterial.uniforms.uColor.value.copy(blendedCoreColor);
   ringMaterial.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.75, 1.5, state.brightness);
   ringMaterial.uniforms.uPulse.value = state.pulse;
+  ringTrailMaterial.uniforms.uBrightness.value = ringMaterial.uniforms.uBrightness.value;
+  ringTrailMaterial.uniforms.uPulse.value = state.pulse;
+  dustMaterial.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.8, 1.35, state.brightness);
+  dustMaterial.uniforms.uPulse.value = state.pulse;
   aura.material.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.18, 1.2, state.brightness + state.pulse * 0.18);
+  shockwave.material.uniforms.uTime.value = time;
+  shockwave.material.uniforms.uPulse.value = state.pulse;
+  shockwave.material.uniforms.uProgress.value = state.shockwaveActive ? state.shockwave : 0;
 
   rimLight.intensity = THREE.MathUtils.lerp(3.1, 13.5, state.brightness) + state.pulse * 5.6;
   fillLight.intensity = THREE.MathUtils.lerp(1.8, 5.2, state.brightness) + state.pulse * 1.4;
   backLight.intensity = 2.8 + state.chaos * 2.4 + state.pulse * 1.8;
+  ambient.intensity = 0.62 + state.pulse * 0.16;
+  rimLight.color.copy(new THREE.Color(0xfff2d3).lerp(new THREE.Color(0xfff8ea), state.pulse * 0.5));
+  fillLight.color.copy(new THREE.Color(0x6ea8ff).lerp(new THREE.Color(0x8de0ff), state.pulse * 0.7));
+  backLight.color.copy(new THREE.Color(0x95d8ff).lerp(new THREE.Color(0xbff5ff), state.pulse * 0.7));
   rimLight.position.x = pointer.normX * 8;
   rimLight.position.y = -pointer.normY * 5;
   fillLight.position.x = -18 + pointer.normX * -5;
   fillLight.position.y = 10 + pointer.normY * 4;
-  renderer.toneMappingExposure = THREE.MathUtils.lerp(0.95, 1.72, state.brightness) + state.pulse * 0.12;
+  renderer.toneMappingExposure =
+    THREE.MathUtils.lerp(0.95, 1.72, state.brightness) +
+    state.pulse * 0.22 +
+    Math.max(0, state.pulse - 0.35) * 0.18;
 
-  const cameraTargetZ = THREE.MathUtils.lerp(20, 11.5, state.scale / 3.95);
+  const cameraBreath = Math.sin(time * 0.42) * 0.24 + Math.sin(time * 0.17) * 0.16;
+  const cameraTargetZ = THREE.MathUtils.lerp(20, 11.5, state.scale / 3.95) + cameraBreath;
   camera.position.z = THREE.MathUtils.damp(camera.position.z, cameraTargetZ, 1.8, delta);
   camera.position.x = THREE.MathUtils.damp(camera.position.x, pointer.normX * 0.85, 1.8, delta);
-  camera.position.y = THREE.MathUtils.damp(camera.position.y, 2.4 - pointer.normY * 0.6, 1.1, delta);
+  camera.position.y = THREE.MathUtils.damp(
+    camera.position.y,
+    2.4 - pointer.normY * 0.6 + Math.cos(time * 0.34) * 0.08,
+    1.1,
+    delta,
+  );
 
   stars.rotation.y += 0.00018;
   stars.rotation.x = pointer.normY * 0.03;
+  shockwave.scale.setScalar(0.82 + state.shockwave * 1.95);
 }
 
 function updatePointerControl(delta) {
   state.openness = THREE.MathUtils.damp(state.openness, state.opennessTarget, 6, delta);
   saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX, 3.6, delta);
-  saturnSystem.rotation.y = THREE.MathUtils.damp(
-    saturnSystem.rotation.y,
-    pointer.rotY + clock.elapsedTime * 0.08,
-    2.8,
-    delta,
-  );
 }
 
 function updateReadout() {
@@ -623,6 +851,7 @@ function animate() {
   updateVisualState(elapsed, delta);
   updateCore(elapsed);
   updateRing(elapsed);
+  updateDust(elapsed);
   updateReadout();
   updateCursorGlow();
   renderer.render(scene, camera);
