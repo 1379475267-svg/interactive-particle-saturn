@@ -472,6 +472,8 @@ const pointer = {
   lastY: 0,
   normX: 0,
   normY: 0,
+  smoothX: 0,
+  smoothY: 0,
   rotX: 0.22,
   rotY: 0,
 };
@@ -636,6 +638,8 @@ function updateDust(time) {
 }
 
 function updateVisualState(time, delta) {
+  pointer.smoothX = THREE.MathUtils.damp(pointer.smoothX, pointer.normX, 6, delta);
+  pointer.smoothY = THREE.MathUtils.damp(pointer.smoothY, pointer.normY, 6, delta);
   state.intro = THREE.MathUtils.damp(state.intro, 1, 0.85, delta);
   state.pulse = THREE.MathUtils.damp(state.pulse, state.pulseTarget, 5.5, delta);
   state.pulseTarget = THREE.MathUtils.damp(state.pulseTarget, 0, 2.8, delta);
@@ -654,9 +658,9 @@ function updateVisualState(time, delta) {
 
   state.orbitSpin += delta * (0.22 + state.scale * 0.08);
   saturnSystem.rotation.y = pointer.rotY + state.orbitSpin;
-  saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.03 + pointer.normX * 0.04;
-  saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.normY * 0.24;
-  saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.normX * 0.42, 2.1, delta);
+  saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.03 + pointer.smoothX * 0.04;
+  saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.smoothY * 0.24;
+  saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.smoothX * 0.42, 2.1, delta);
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
 
   coreMaterial.uniforms.uTime.value = time;
@@ -687,10 +691,10 @@ function updateVisualState(time, delta) {
   rimLight.color.copy(new THREE.Color(0xfff2d3).lerp(new THREE.Color(0xfff8ea), state.pulse * 0.5));
   fillLight.color.copy(new THREE.Color(0x6ea8ff).lerp(new THREE.Color(0x8de0ff), state.pulse * 0.7));
   backLight.color.copy(new THREE.Color(0x95d8ff).lerp(new THREE.Color(0xbff5ff), state.pulse * 0.7));
-  rimLight.position.x = pointer.normX * 8;
-  rimLight.position.y = -pointer.normY * 5;
-  fillLight.position.x = -18 + pointer.normX * -5;
-  fillLight.position.y = 10 + pointer.normY * 4;
+  rimLight.position.x = pointer.smoothX * 8;
+  rimLight.position.y = -pointer.smoothY * 5;
+  fillLight.position.x = -18 + pointer.smoothX * -5;
+  fillLight.position.y = 10 + pointer.smoothY * 4;
   renderer.toneMappingExposure =
     THREE.MathUtils.lerp(0.95, 1.72, state.brightness) +
     state.pulse * 0.22 +
@@ -699,16 +703,16 @@ function updateVisualState(time, delta) {
   const cameraBreath = Math.sin(time * 0.42) * 0.24 + Math.sin(time * 0.17) * 0.16;
   const cameraTargetZ = THREE.MathUtils.lerp(20, 11.5, state.scale / 3.95) + cameraBreath;
   camera.position.z = THREE.MathUtils.damp(camera.position.z, cameraTargetZ, 1.8, delta);
-  camera.position.x = THREE.MathUtils.damp(camera.position.x, pointer.normX * 0.85, 1.8, delta);
+  camera.position.x = THREE.MathUtils.damp(camera.position.x, pointer.smoothX * 0.85, 1.8, delta);
   camera.position.y = THREE.MathUtils.damp(
     camera.position.y,
-    2.4 - pointer.normY * 0.6 + Math.cos(time * 0.34) * 0.08,
+    2.4 - pointer.smoothY * 0.6 + Math.cos(time * 0.34) * 0.08,
     1.1,
     delta,
   );
 
   stars.rotation.y += 0.00018;
-  stars.rotation.x = pointer.normY * 0.03;
+  stars.rotation.x = pointer.smoothY * 0.03;
   shockwave.scale.setScalar(0.82 + state.shockwave * 1.95);
 }
 
@@ -822,10 +826,6 @@ renderer.domElement.addEventListener("pointermove", (event) => {
   state.opennessTarget = THREE.MathUtils.clamp(state.opennessTarget + deltaY * 0.0015, 0, 1);
   pointer.rotY += event.movementX * 0.0035;
   pointer.rotX = THREE.MathUtils.clamp(pointer.rotX + event.movementY * 0.0015, -0.55, 0.55);
-  state.pulseTarget = Math.max(
-    state.pulseTarget,
-    Math.min(Math.abs(event.movementX) + Math.abs(event.movementY), 40) * 0.01,
-  );
   setStatus(`Drag control. Openness ${(state.opennessTarget * 100).toFixed(0)}%`, true);
 });
 
