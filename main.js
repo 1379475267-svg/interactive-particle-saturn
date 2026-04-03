@@ -2,6 +2,10 @@ import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.m
 
 const canvas = document.querySelector("#scene");
 const fullscreenBtn = document.querySelector("#fullscreenBtn");
+const infoBtn = document.querySelector("#infoBtn");
+const closeInfoBtn = document.querySelector("#closeInfoBtn");
+const infoPanel = document.querySelector("#infoPanel");
+const cursorGlow = document.querySelector("#cursorGlow");
 const statusText = document.querySelector("#statusText");
 const statusDot = document.querySelector("#statusDot");
 const readoutScale = document.querySelector("#readoutScale");
@@ -40,7 +44,7 @@ const coreGroup = new THREE.Group();
 const ringGroup = new THREE.Group();
 saturnSystem.add(coreGroup, ringGroup);
 
-const ambient = new THREE.AmbientLight(0xbddcff, 0.6);
+const ambient = new THREE.AmbientLight(0xbddcff, 0.7);
 scene.add(ambient);
 
 const rimLight = new THREE.PointLight(0xfff2d3, 8, 120, 2);
@@ -51,8 +55,12 @@ const fillLight = new THREE.PointLight(0x6ea8ff, 3.6, 120, 2);
 fillLight.position.set(-18, 10, 12);
 scene.add(fillLight);
 
+const backLight = new THREE.PointLight(0x95d8ff, 2.8, 130, 2);
+backLight.position.set(12, -8, -18);
+scene.add(backLight);
+
 const starGeometry = new THREE.BufferGeometry();
-const starCount = 1000;
+const starCount = 1400;
 const starPositions = new Float32Array(starCount * 3);
 for (let i = 0; i < starCount; i += 1) {
   const radius = 40 + Math.random() * 90;
@@ -116,6 +124,7 @@ const coreMaterial = new THREE.ShaderMaterial({
     uScale: { value: 1 },
     uChaos: { value: 0 },
     uBrightness: { value: 1 },
+    uPulse: { value: 0 },
     uColor: { value: baseSaturnColor.clone() },
   },
   vertexShader: `
@@ -124,17 +133,18 @@ const coreMaterial = new THREE.ShaderMaterial({
     uniform float uTime;
     uniform float uScale;
     uniform float uChaos;
+    uniform float uPulse;
     varying float vStrength;
 
     void main() {
       vec3 displaced = position;
       float pulse = sin(uTime * (0.28 + aSize * 0.36) + position.y * 1.3) * 0.1;
-      displaced *= 1.0 + pulse;
+      displaced *= 1.0 + pulse + uPulse * 0.06;
       displaced += normalize(position) * uChaos * (0.18 + aSize * 0.2) * sin(uTime * 5.4 + position.x * 2.0);
 
       vec4 mvPosition = modelViewMatrix * vec4(displaced * uScale, 1.0);
       gl_Position = projectionMatrix * mvPosition;
-      gl_PointSize = (4.0 + 6.0 * aSize) * uPixelRatio / max(1.0, -mvPosition.z * 0.09);
+      gl_PointSize = (4.0 + 6.0 * aSize + uPulse * 4.0) * uPixelRatio / max(1.0, -mvPosition.z * 0.09);
       vStrength = 0.55 + aSize * 0.6;
     }
   `,
@@ -212,17 +222,19 @@ const ringMaterial = new THREE.ShaderMaterial({
   uniforms: {
     uPixelRatio: { value: renderer.getPixelRatio() },
     uBrightness: { value: 1 },
+    uPulse: { value: 0 },
   },
   vertexShader: `
     attribute float aSize;
     varying vec3 vColor;
     uniform float uPixelRatio;
     uniform float uBrightness;
+    uniform float uPulse;
 
     void main() {
       vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
       gl_Position = projectionMatrix * mvPosition;
-      gl_PointSize = (2.2 + aSize * 6.8 * uBrightness) * uPixelRatio / max(1.0, -mvPosition.z * 0.1);
+      gl_PointSize = (2.2 + aSize * 6.8 * uBrightness + uPulse * 2.6) * uPixelRatio / max(1.0, -mvPosition.z * 0.1);
       vColor = color;
     }
   `,
@@ -277,23 +289,42 @@ coreGroup.add(aura);
 const state = {
   openness: 0.16,
   opennessTarget: 0.16,
-  confidence: 0,
   scale: 0.88,
   scaleTarget: 0.88,
   brightness: 0.6,
   chaos: 0,
   burst: 0,
   intro: 0,
+  pulse: 0,
+  pulseTarget: 0,
+  infoOpen: false,
 };
 
-let pointerActive = false;
-let lastPointerY = 0;
-let pointerRotationY = 0;
-let pointerRotationX = 0.22;
+const pointer = {
+  active: false,
+  lastY: 0,
+  normX: 0,
+  normY: 0,
+  rotX: 0.22,
+  rotY: 0,
+};
 
 function setStatus(text, live = false) {
   statusText.textContent = text;
   statusDot.classList.toggle("live", live);
+}
+
+function setInfoOpen(nextOpen) {
+  state.infoOpen = nextOpen;
+  infoPanel.classList.toggle("open", nextOpen);
+  infoPanel.setAttribute("aria-hidden", String(!nextOpen));
+  infoBtn.textContent = nextOpen ? "Hide Info" : "Info";
+}
+
+function triggerBurst(intensity = 1) {
+  state.pulseTarget = Math.max(state.pulseTarget, intensity);
+  state.opennessTarget = THREE.MathUtils.clamp(state.opennessTarget + 0.24 * intensity, 0, 1);
+  setStatus("Energy burst triggered.", true);
 }
 
 function solveKepler(meanAnomaly, eccentricity) {
@@ -306,7 +337,7 @@ function solveKepler(meanAnomaly, eccentricity) {
   return eccentricAnomaly;
 }
 
-function orbitPoint(params, time, chaos) {
+function orbitPoint(params, time, chaos, pulse) {
   const meanMotion = params.baseSpeed / Math.pow(params.a, 1.5);
   const meanAnomaly = params.meanAnomaly + time * meanMotion;
   const eccentricAnomaly = solveKepler(meanAnomaly, params.e);
@@ -331,18 +362,20 @@ function orbitPoint(params, time, chaos) {
   const pz = radius * (sinNode * cosArg + cosNode * sinArg * cosI);
 
   const position = new THREE.Vector3(px, py, pz);
-  if (chaos <= 0.001) {
+  if (chaos <= 0.001 && pulse <= 0.001) {
     return position;
   }
 
   const radial = position.clone().normalize();
   const swirl = new THREE.Vector3(
-    Math.sin(time * 17.0 + params.noisePhase),
-    Math.cos(time * 21.0 + params.noisePhase * 0.7),
-    Math.sin(time * 26.0 + params.noisePhase * 1.4),
-  ).multiplyScalar(0.16 + chaos * 1.85);
+    Math.sin(time * (17 + pulse * 8) + params.noisePhase),
+    Math.cos(time * (21 + pulse * 6) + params.noisePhase * 0.7),
+    Math.sin(time * (26 + pulse * 9) + params.noisePhase * 1.4),
+  ).multiplyScalar(0.16 + chaos * 1.85 + pulse * 0.65);
 
-  const burst = radial.multiplyScalar(chaos * chaos * params.a * params.burstBias * 1.3);
+  const burst = radial.multiplyScalar(
+    chaos * chaos * params.a * params.burstBias * 1.3 + pulse * params.a * 0.2,
+  );
   return position.add(swirl).add(burst);
 }
 
@@ -350,11 +383,10 @@ function updateRing(time) {
   const positionAttr = ringGeometry.getAttribute("position");
   const positions = positionAttr.array;
   const scale = state.scale;
-  const chaos = state.chaos;
 
   for (let i = 0; i < ringCount; i += 1) {
     const idx = i * 3;
-    const point = orbitPoint(ringState[i], time, chaos);
+    const point = orbitPoint(ringState[i], time, state.chaos, state.pulse);
     positions[idx] = point.x * scale;
     positions[idx + 1] = point.y * scale;
     positions[idx + 2] = point.z * scale;
@@ -388,7 +420,9 @@ function updateCore(time) {
       (0.18 + coreSeeds[seedOffset + 3] * 0.85) *
       (1 + 0.7 * Math.sin(time * 18 + coreSeeds[seedOffset]));
 
-    const burstOffset = state.burst * state.burst * 2.6 * (0.3 + coreSizes[i] * 0.7);
+    const burstOffset =
+      state.burst * state.burst * 2.6 * (0.3 + coreSizes[i] * 0.7) +
+      state.pulse * 0.9 * (0.4 + coreSizes[i] * 0.6);
 
     positions[idx] = (ox * scalePulse + nx * (chaosOffset + burstOffset)) * state.scale;
     positions[idx + 1] = (oy * scalePulse + ny * (chaosOffset + burstOffset)) * state.scale;
@@ -400,6 +434,8 @@ function updateCore(time) {
 
 function updateVisualState(time, delta) {
   state.intro = THREE.MathUtils.damp(state.intro, 1, 0.85, delta);
+  state.pulse = THREE.MathUtils.damp(state.pulse, state.pulseTarget, 5.5, delta);
+  state.pulseTarget = THREE.MathUtils.damp(state.pulseTarget, 0, 2.8, delta);
   state.scaleTarget = THREE.MathUtils.lerp(0.76, 3.95, state.openness);
   state.scale = THREE.MathUtils.damp(state.scale, state.scaleTarget, 3.8, delta);
   state.brightness = THREE.MathUtils.lerp(0.34, 1.18, Math.pow(state.scale / 3.95, 0.92));
@@ -407,40 +443,47 @@ function updateVisualState(time, delta) {
   state.burst = THREE.MathUtils.smoothstep(state.scale, 3.3, 3.95);
 
   saturnSystem.rotation.y += 0.0008 + state.scale * 0.0004;
-  saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.03;
-  saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro);
-  saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1, state.intro));
+  saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.03 + pointer.normX * 0.04;
+  saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.normY * 0.24;
+  saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.normX * 0.42, 2.1, delta);
+  saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
 
   coreMaterial.uniforms.uTime.value = time;
   coreMaterial.uniforms.uScale.value = 1;
   coreMaterial.uniforms.uChaos.value = state.chaos;
   coreMaterial.uniforms.uBrightness.value = state.brightness;
+  coreMaterial.uniforms.uPulse.value = state.pulse;
 
-  const blendedCoreColor = baseSaturnColor.clone().lerp(chaosColor, state.chaos * 0.35);
+  const blendedCoreColor = baseSaturnColor.clone().lerp(chaosColor, state.chaos * 0.35 + state.pulse * 0.1);
   coreMaterial.uniforms.uColor.value.copy(blendedCoreColor);
   ringMaterial.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.75, 1.5, state.brightness);
-  aura.material.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.18, 1.2, state.brightness);
+  ringMaterial.uniforms.uPulse.value = state.pulse;
+  aura.material.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.18, 1.2, state.brightness + state.pulse * 0.18);
 
-  rimLight.intensity = THREE.MathUtils.lerp(3.1, 13.5, state.brightness);
-  fillLight.intensity = THREE.MathUtils.lerp(1.8, 5.2, state.brightness);
-  renderer.toneMappingExposure = THREE.MathUtils.lerp(0.95, 1.72, state.brightness);
+  rimLight.intensity = THREE.MathUtils.lerp(3.1, 13.5, state.brightness) + state.pulse * 5.6;
+  fillLight.intensity = THREE.MathUtils.lerp(1.8, 5.2, state.brightness) + state.pulse * 1.4;
+  backLight.intensity = 2.8 + state.chaos * 2.4 + state.pulse * 1.8;
+  rimLight.position.x = pointer.normX * 8;
+  rimLight.position.y = -pointer.normY * 5;
+  fillLight.position.x = -18 + pointer.normX * -5;
+  fillLight.position.y = 10 + pointer.normY * 4;
+  renderer.toneMappingExposure = THREE.MathUtils.lerp(0.95, 1.72, state.brightness) + state.pulse * 0.12;
 
   const cameraTargetZ = THREE.MathUtils.lerp(20, 11.5, state.scale / 3.95);
   camera.position.z = THREE.MathUtils.damp(camera.position.z, cameraTargetZ, 1.8, delta);
-  camera.position.y = THREE.MathUtils.damp(camera.position.y, 2.4, 1.1, delta);
+  camera.position.x = THREE.MathUtils.damp(camera.position.x, pointer.normX * 0.85, 1.8, delta);
+  camera.position.y = THREE.MathUtils.damp(camera.position.y, 2.4 - pointer.normY * 0.6, 1.1, delta);
+
+  stars.rotation.y += 0.00018;
+  stars.rotation.x = pointer.normY * 0.03;
 }
 
 function updatePointerControl(delta) {
   state.openness = THREE.MathUtils.damp(state.openness, state.opennessTarget, 6, delta);
-  saturnSystem.rotation.x = THREE.MathUtils.damp(
-    saturnSystem.rotation.x,
-    pointerRotationX,
-    3.6,
-    delta,
-  );
+  saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX, 3.6, delta);
   saturnSystem.rotation.y = THREE.MathUtils.damp(
     saturnSystem.rotation.y,
-    pointerRotationY + clock.elapsedTime * 0.08,
+    pointer.rotY + clock.elapsedTime * 0.08,
     2.8,
     delta,
   );
@@ -456,9 +499,19 @@ function updateReadout() {
     mode = "Burst";
   } else if (state.chaos > 0.15) {
     mode = "Transition";
+  } else if (state.pulse > 0.18) {
+    mode = "Energized";
   }
 
   readoutMode.textContent = mode;
+}
+
+function updateCursorGlow() {
+  cursorGlow.style.opacity = "1";
+  cursorGlow.style.left = `${((pointer.normX + 1) * 0.5) * window.innerWidth}px`;
+  cursorGlow.style.top = `${((1 - (pointer.normY + 1) * 0.5)) * window.innerHeight}px`;
+  const scale = 0.85 + state.chaos * 0.45 + state.pulse * 0.35;
+  cursorGlow.style.transform = `translate(-50%, -50%) scale(${scale})`;
 }
 
 function onResize() {
@@ -468,6 +521,11 @@ function onResize() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   coreMaterial.uniforms.uPixelRatio.value = renderer.getPixelRatio();
   ringMaterial.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+}
+
+function updatePointerPosition(clientX, clientY) {
+  pointer.normX = THREE.MathUtils.clamp((clientX / window.innerWidth) * 2 - 1, -1, 1);
+  pointer.normY = THREE.MathUtils.clamp(-((clientY / window.innerHeight) * 2 - 1), -1, 1);
 }
 
 fullscreenBtn.addEventListener("click", async () => {
@@ -481,9 +539,26 @@ fullscreenBtn.addEventListener("click", async () => {
 });
 
 document.addEventListener("fullscreenchange", () => {
-  fullscreenBtn.textContent = document.fullscreenElement
-    ? "Exit Fullscreen"
-    : "Fullscreen";
+  fullscreenBtn.textContent = document.fullscreenElement ? "Exit Fullscreen" : "Fullscreen";
+});
+
+infoBtn.addEventListener("click", () => {
+  setInfoOpen(!state.infoOpen);
+});
+
+closeInfoBtn.addEventListener("click", () => {
+  setInfoOpen(false);
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key.toLowerCase() === "i") {
+    setInfoOpen(!state.infoOpen);
+  }
+
+  if (event.code === "Space") {
+    event.preventDefault();
+    triggerBurst(1);
+  }
 });
 
 window.addEventListener("resize", onResize);
@@ -493,56 +568,50 @@ renderer.domElement.addEventListener(
   (event) => {
     event.preventDefault();
     const deltaDirection = THREE.MathUtils.clamp(-event.deltaY * 0.0012, -0.18, 0.18);
-    state.opennessTarget = THREE.MathUtils.clamp(
-      state.opennessTarget + deltaDirection,
-      0,
-      1,
-    );
-    setStatus(
-      `Mouse wheel control. Openness ${(state.opennessTarget * 100).toFixed(0)}%`,
-      true,
-    );
+    state.opennessTarget = THREE.MathUtils.clamp(state.opennessTarget + deltaDirection, 0, 1);
+    state.pulseTarget = Math.max(state.pulseTarget, Math.abs(deltaDirection) * 0.8);
+    setStatus(`Scroll control. Openness ${(state.opennessTarget * 100).toFixed(0)}%`, true);
   },
   { passive: false },
 );
 
 renderer.domElement.addEventListener("pointerdown", (event) => {
-  pointerActive = true;
-  lastPointerY = event.clientY;
+  pointer.active = true;
+  pointer.lastY = event.clientY;
+  updatePointerPosition(event.clientX, event.clientY);
   renderer.domElement.setPointerCapture(event.pointerId);
 });
 
 renderer.domElement.addEventListener("pointermove", (event) => {
-  if (!pointerActive) {
+  updatePointerPosition(event.clientX, event.clientY);
+
+  if (!pointer.active) {
     return;
   }
 
-  const deltaY = lastPointerY - event.clientY;
-  lastPointerY = event.clientY;
-  state.opennessTarget = THREE.MathUtils.clamp(
-    state.opennessTarget + deltaY * 0.0015,
-    0,
-    1,
+  const deltaY = pointer.lastY - event.clientY;
+  pointer.lastY = event.clientY;
+  state.opennessTarget = THREE.MathUtils.clamp(state.opennessTarget + deltaY * 0.0015, 0, 1);
+  pointer.rotY += event.movementX * 0.0035;
+  pointer.rotX = THREE.MathUtils.clamp(pointer.rotX + event.movementY * 0.0015, -0.55, 0.55);
+  state.pulseTarget = Math.max(
+    state.pulseTarget,
+    Math.min(Math.abs(event.movementX) + Math.abs(event.movementY), 40) * 0.01,
   );
-  pointerRotationY += event.movementX * 0.0035;
-  pointerRotationX = THREE.MathUtils.clamp(
-    pointerRotationX + event.movementY * 0.0015,
-    -0.55,
-    0.55,
-  );
-  setStatus(
-    `Pointer control active. Openness ${(state.opennessTarget * 100).toFixed(0)}%`,
-    true,
-  );
+  setStatus(`Drag control. Openness ${(state.opennessTarget * 100).toFixed(0)}%`, true);
 });
 
 renderer.domElement.addEventListener("pointerup", (event) => {
-  pointerActive = false;
+  pointer.active = false;
   renderer.domElement.releasePointerCapture(event.pointerId);
 });
 
 renderer.domElement.addEventListener("pointerleave", () => {
-  pointerActive = false;
+  pointer.active = false;
+});
+
+renderer.domElement.addEventListener("dblclick", () => {
+  triggerBurst(1.2);
 });
 
 function animate() {
@@ -555,8 +624,10 @@ function animate() {
   updateCore(elapsed);
   updateRing(elapsed);
   updateReadout();
+  updateCursorGlow();
   renderer.render(scene, camera);
 }
 
-setStatus("Mouse wheel or vertical drag controls Saturn.", true);
+setInfoOpen(false);
+setStatus("Scroll, drag, double-click, or press space.", true);
 animate();

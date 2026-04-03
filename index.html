@@ -12,144 +12,100 @@
   <body>
     <div class="app-shell">
       <canvas id="scene"></canvas>
+      <div class="cursor-glow" id="cursorGlow"></div>
 
       <header class="topbar">
-        <div class="brand-block">
+        <div class="brand">
           <span class="brand-mark"></span>
           <div class="brand-copy">
             <span class="brand-name">Interactive Particle Saturn</span>
-            <span class="brand-sub">Three.js orbital study</span>
+            <span class="brand-sub">Three.js cinematic playground</span>
           </div>
         </div>
-        <nav class="topnav">
-          <a href="#about">About</a>
-          <a href="#system">System</a>
-          <a href="#notes">Notes</a>
-        </nav>
+
+        <div class="top-actions">
+          <div class="status-pill">
+            <span class="status-dot" id="statusDot"></span>
+            <span id="statusText">Booting app...</span>
+          </div>
+          <button id="infoBtn" type="button">Info</button>
+          <button id="fullscreenBtn" type="button">Fullscreen</button>
+        </div>
       </header>
 
-      <div class="hud">
-        <div class="hud-top">
-          <div class="hud-card hero-card">
-            <p class="eyebrow">Particle Saturn Study</p>
-            <h1>Interactive Particle Saturn</h1>
-            <p class="description">
-              A cinematic Three.js experiment built around a dense particle
-              core, Kepler-inspired rings, dynamic light falloff, and a chaos
-              burst that breaks orbital order near the camera.
-            </p>
-            <div class="hero-actions">
-              <span class="ghost-pill">Three.js + Particle Orbits</span>
-              <span class="inline-tip">Scroll or drag to reshape Saturn</span>
+      <section class="hero-copy">
+        <p class="eyebrow">Particle Saturn Study</p>
+        <h1>Push the orbit until it breaks.</h1>
+        <p class="description">
+          Scroll, drag, double-click, or press space to drive a particle Saturn
+          from stable Kepler-like motion into a near-camera chaos burst.
+        </p>
+      </section>
+
+      <aside class="info-panel" id="infoPanel" aria-hidden="true">
+        <div class="info-inner">
+          <div class="info-head">
+            <div>
+              <p class="panel-kicker">About</p>
+              <h2>Interactive Particle Saturn</h2>
             </div>
+            <button id="closeInfoBtn" type="button" aria-label="Close info panel">
+              Close
+            </button>
           </div>
 
-          <div class="side-stack">
-            <section class="info-card">
-              <p class="card-label">Interaction</p>
-              <ul class="info-list">
-                <li>Mouse wheel controls expansion and collapse</li>
-                <li>Vertical drag changes energy and apparent scale</li>
-                <li>Horizontal drag shifts viewing angle</li>
-                <li>Fullscreen mode turns the page into a clean demo stage</li>
-              </ul>
-            </section>
+          <p class="panel-text">
+            A browser artwork that treats Saturn as a responsive particle field:
+            more scale, more light, less orbital order, and finally a deliberate
+            collapse into turbulence.
+          </p>
+          <div class="info-block">
+            <p class="panel-kicker">Controls</p>
+            <p class="panel-line">Scroll: expand or contract</p>
+            <p class="panel-line">Drag: reshape scale and viewing angle</p>
+            <p class="panel-line">Double-click or Space: trigger an energy burst</p>
+          </div>
 
-            <section class="info-card">
-              <p class="card-label">System Readout</p>
-              <div class="stat-grid">
-                <div class="stat-item">
-                  <span class="stat-value" id="readoutScale">0.88</span>
-                  <span class="stat-name">Scale</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-value" id="readoutBrightness">0.60</span>
-                  <span class="stat-name">Brightness</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-value" id="readoutChaos">0.00</span>
-                  <span class="stat-name">Chaos</span>
-                </div>
-                <div class="stat-item">
-                  <span class="stat-value" id="readoutMode">Stable</span>
-                  <span class="stat-name">Phase</span>
-                </div>
+          <div class="info-block">
+            <p class="panel-kicker">Live Readout</p>
+            <div class="readout-grid">
+              <div>
+                <span class="readout-value" id="readoutScale">0.88</span>
+                <span class="readout-label">Scale</span>
               </div>
-            </section>
-          </div>
-        </div>
-
-        <section class="story-grid">
-          <article class="story-card" id="about">
-            <p class="card-label">About / Project</p>
-            <h2>Built as a cinematic browser experiment</h2>
-            <p class="story-copy">
-              This scene treats Saturn as a responsive field rather than a fixed
-              object. Expansion increases luminosity, loosens orbital order, and
-              pushes the ring system into a turbulent near-camera state.
-            </p>
-            <p class="story-copy cn">
-              Saturn is presented as a responsive particle field: larger scale,
-              stronger light, less orbital stability, and a deliberate collapse
-              into turbulence near the camera.
-            </p>
-          </article>
-
-          <article class="story-card" id="system">
-            <p class="card-label">System / Structure</p>
-            <h2>Kepler motion, light falloff, burst transition</h2>
-            <p class="story-copy">
-              The ring particles use elliptical orbital parameters and
-              radius-dependent angular velocity. A scale threshold then blends
-              in random perturbation and outward burst offsets to break the
-              original pattern.
-            </p>
-            <p class="story-copy cn">
-              The system starts from ordered orbital motion, then blends toward
-              noise and outward burst offsets once the expansion threshold is crossed.
-            </p>
-          </article>
-        </section>
-
-        <div class="hud-bottom">
-          <div class="feature-ribbon">
-            <article class="feature-chip">
-              <span class="feature-title">Particle Core</span>
-              <span class="feature-copy">22k particles form the central mass</span>
-            </article>
-            <article class="feature-chip">
-              <span class="feature-title">Orbital Rings</span>
-              <span class="feature-copy">Kepler-style angular velocity by radius</span>
-            </article>
-            <article class="feature-chip">
-              <span class="feature-title">Chaos Burst</span>
-              <span class="feature-copy">Near-screen expansion breaks orbital order</span>
-            </article>
-          </div>
-
-          <div class="controls-panel">
-            <div class="status-panel">
-              <span class="status-dot" id="statusDot"></span>
-              <span id="statusText">Loading scene state</span>
-            </div>
-
-            <div class="controls">
-              <button id="fullscreenBtn" type="button">Fullscreen</button>
+              <div>
+                <span class="readout-value" id="readoutBrightness">0.60</span>
+                <span class="readout-label">Brightness</span>
+              </div>
+              <div>
+                <span class="readout-value" id="readoutChaos">0.00</span>
+                <span class="readout-label">Chaos</span>
+              </div>
+              <div>
+                <span class="readout-value" id="readoutMode">Stable</span>
+                <span class="readout-label">Phase</span>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <footer class="page-footer" id="notes">
-        <span>Interactive browser artwork built for GitHub Pages presentation.</span>
-        <span>Use desktop for the strongest visual response.</span>
+          <div class="info-block">
+            <p class="panel-kicker">Notes</p>
+            <p class="panel-line">Built for GitHub Pages presentation.</p>
+            <p class="panel-line">Desktop gives the strongest visual response, but the page now stays clean on mobile.</p>
+          </div>
+        </div>
+      </aside>
+
+      <footer class="bottom-hint">
+        <span>Scroll or drag</span>
+        <span>Double-click to burst</span>
+        <span>Press I for info</span>
       </footer>
     </div>
 
     <script>
       const bootStatus = document.getElementById("statusText");
       const bootDot = document.getElementById("statusDot");
-      bootStatus.textContent = "Booting app...";
 
       window.addEventListener("error", (event) => {
         bootStatus.textContent = `Script error: ${event.message || "unknown error"}`;
@@ -162,6 +118,6 @@
         bootDot.classList.remove("live");
       });
     </script>
-    <script type="module" src="./main.js?v=20260404-5"></script>
+    <script type="module" src="./main.js?v=20260404-6"></script>
   </body>
 </html>
