@@ -469,6 +469,7 @@ const state = {
 
 const pointer = {
   active: false,
+  lastX: 0,
   lastY: 0,
   normX: 0,
   normY: 0,
@@ -476,6 +477,8 @@ const pointer = {
   smoothY: 0,
   rotX: 0.22,
   rotY: 0,
+  rotXTarget: 0.22,
+  rotYTarget: 0,
 };
 
 function setStatus(text, live = false) {
@@ -718,7 +721,9 @@ function updateVisualState(time, delta) {
 
 function updatePointerControl(delta) {
   state.openness = THREE.MathUtils.damp(state.openness, state.opennessTarget, 6, delta);
-  saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX, 3.6, delta);
+  pointer.rotX = THREE.MathUtils.damp(pointer.rotX, pointer.rotXTarget, 5.2, delta);
+  pointer.rotY = THREE.MathUtils.damp(pointer.rotY, pointer.rotYTarget, 5.2, delta);
+  saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX, 4.8, delta);
 }
 
 function updateReadout() {
@@ -809,6 +814,7 @@ renderer.domElement.addEventListener(
 
 renderer.domElement.addEventListener("pointerdown", (event) => {
   pointer.active = true;
+  pointer.lastX = event.clientX;
   pointer.lastY = event.clientY;
   updatePointerPosition(event.clientX, event.clientY);
   renderer.domElement.setPointerCapture(event.pointerId);
@@ -821,12 +827,13 @@ renderer.domElement.addEventListener("pointermove", (event) => {
     return;
   }
 
-  const deltaY = pointer.lastY - event.clientY;
+  const deltaX = event.clientX - pointer.lastX;
+  const deltaY = event.clientY - pointer.lastY;
+  pointer.lastX = event.clientX;
   pointer.lastY = event.clientY;
-  state.opennessTarget = THREE.MathUtils.clamp(state.opennessTarget + deltaY * 0.0015, 0, 1);
-  pointer.rotY += event.movementX * 0.0035;
-  pointer.rotX = THREE.MathUtils.clamp(pointer.rotX + event.movementY * 0.0015, -0.55, 0.55);
-  setStatus(`Drag control. Openness ${(state.opennessTarget * 100).toFixed(0)}%`, true);
+  pointer.rotYTarget += deltaX * 0.0042;
+  pointer.rotXTarget = THREE.MathUtils.clamp(pointer.rotXTarget + deltaY * 0.0022, -0.42, 0.42);
+  setStatus("Drag orbit control active.", true);
 });
 
 renderer.domElement.addEventListener("pointerup", (event) => {
@@ -858,5 +865,5 @@ function animate() {
 }
 
 setInfoOpen(false);
-setStatus("Scroll, drag, double-click, or press space.", true);
+setStatus("Wheel scales. Drag rotates. Double-click or Space bursts.", true);
 animate();
