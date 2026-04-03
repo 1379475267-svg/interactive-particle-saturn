@@ -13,25 +13,136 @@
     <div class="app-shell">
       <canvas id="scene"></canvas>
 
+      <header class="topbar">
+        <div class="brand-block">
+          <span class="brand-mark"></span>
+          <div class="brand-copy">
+            <span class="brand-name">Interactive Particle Saturn</span>
+            <span class="brand-sub">Three.js orbital study</span>
+          </div>
+        </div>
+        <nav class="topnav">
+          <a href="#about">About</a>
+          <a href="#system">System</a>
+          <a href="#notes">Notes</a>
+        </nav>
+      </header>
+
       <div class="hud">
-        <div class="hud-card">
-          <p class="eyebrow">Particle Saturn Study</p>
-          <h1>Interactive Particle Saturn</h1>
-          <p class="description">
-            Use the mouse wheel or vertical drag to expand, brighten, and
-            destabilize Saturn. Pull back to restore stable orbital motion.
-          </p>
+        <div class="hud-top">
+          <div class="hud-card hero-card">
+            <p class="eyebrow">Particle Saturn Study</p>
+            <h1>Interactive Particle Saturn</h1>
+            <p class="description">
+              A cinematic Three.js experiment built around a dense particle
+              core, Kepler-inspired rings, dynamic light falloff, and a chaos
+              burst that breaks orbital order near the camera.
+            </p>
+            <div class="hero-actions">
+              <span class="ghost-pill">Three.js + Particle Orbits</span>
+              <span class="inline-tip">Scroll or drag to reshape Saturn</span>
+            </div>
+          </div>
+
+          <div class="side-stack">
+            <section class="info-card">
+              <p class="card-label">Interaction</p>
+              <ul class="info-list">
+                <li>Mouse wheel controls expansion and collapse</li>
+                <li>Vertical drag changes energy and apparent scale</li>
+                <li>Horizontal drag shifts viewing angle</li>
+                <li>Fullscreen mode turns the page into a clean demo stage</li>
+              </ul>
+            </section>
+
+            <section class="info-card">
+              <p class="card-label">System Readout</p>
+              <div class="stat-grid">
+                <div class="stat-item">
+                  <span class="stat-value" id="readoutScale">0.88</span>
+                  <span class="stat-name">Scale</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-value" id="readoutBrightness">0.60</span>
+                  <span class="stat-name">Brightness</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-value" id="readoutChaos">0.00</span>
+                  <span class="stat-name">Chaos</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-value" id="readoutMode">Stable</span>
+                  <span class="stat-name">Phase</span>
+                </div>
+              </div>
+            </section>
+          </div>
         </div>
 
-        <div class="controls">
-          <button id="fullscreenBtn" type="button">Fullscreen</button>
-        </div>
+        <section class="story-grid">
+          <article class="story-card" id="about">
+            <p class="card-label">About / 项目说明</p>
+            <h2>Built as a cinematic browser experiment</h2>
+            <p class="story-copy">
+              This scene treats Saturn as a responsive field rather than a fixed
+              object. Expansion increases luminosity, loosens orbital order, and
+              pushes the ring system into a turbulent near-camera state.
+            </p>
+            <p class="story-copy cn">
+              这个场景把土星处理成一种可响应的粒子场，而不是静态模型。随着尺度被推高，亮度上升，
+              环轨开始失稳，并在靠近镜头时进入高频混沌与爆散状态。
+            </p>
+          </article>
 
-        <div class="status-panel">
-          <span class="status-dot" id="statusDot"></span>
-          <span id="statusText">Loading scene state</span>
+          <article class="story-card" id="system">
+            <p class="card-label">System / 技术结构</p>
+            <h2>Kepler motion, light falloff, burst transition</h2>
+            <p class="story-copy">
+              The ring particles use elliptical orbital parameters and
+              radius-dependent angular velocity. A scale threshold then blends
+              in random perturbation and outward burst offsets to break the
+              original pattern.
+            </p>
+            <p class="story-copy cn">
+              环粒子采用椭圆轨道参数与随半径变化的角速度近似；当尺度进入阈值区间后，再逐步叠加随机扰动
+              与向外爆散偏移，用来打破原有轨道秩序。
+            </p>
+          </article>
+        </section>
+
+        <div class="hud-bottom">
+          <div class="feature-ribbon">
+            <article class="feature-chip">
+              <span class="feature-title">Particle Core</span>
+              <span class="feature-copy">22k particles form the central mass</span>
+            </article>
+            <article class="feature-chip">
+              <span class="feature-title">Orbital Rings</span>
+              <span class="feature-copy">Kepler-style angular velocity by radius</span>
+            </article>
+            <article class="feature-chip">
+              <span class="feature-title">Chaos Burst</span>
+              <span class="feature-copy">Near-screen expansion breaks orbital order</span>
+            </article>
+          </div>
+
+          <div class="controls-panel">
+            <div class="status-panel">
+              <span class="status-dot" id="statusDot"></span>
+              <span id="statusText">Loading scene state</span>
+            </div>
+
+            <div class="controls">
+              <button id="fullscreenBtn" type="button">Fullscreen</button>
+            </div>
+          </div>
         </div>
       </div>
+
+      <footer class="page-footer" id="notes">
+        <span>Interactive browser artwork built for GitHub Pages presentation.</span>
+        <span>Use desktop for the strongest visual response.</span>
+      </footer>
     </div>
 
     <script>

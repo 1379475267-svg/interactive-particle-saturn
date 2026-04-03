@@ -4,6 +4,10 @@ const canvas = document.querySelector("#scene");
 const fullscreenBtn = document.querySelector("#fullscreenBtn");
 const statusText = document.querySelector("#statusText");
 const statusDot = document.querySelector("#statusDot");
+const readoutScale = document.querySelector("#readoutScale");
+const readoutBrightness = document.querySelector("#readoutBrightness");
+const readoutChaos = document.querySelector("#readoutChaos");
+const readoutMode = document.querySelector("#readoutMode");
 
 const renderer = new THREE.WebGLRenderer({
   canvas,
@@ -279,6 +283,7 @@ const state = {
   brightness: 0.6,
   chaos: 0,
   burst: 0,
+  intro: 0,
 };
 
 let pointerActive = false;
@@ -394,6 +399,7 @@ function updateCore(time) {
 }
 
 function updateVisualState(time, delta) {
+  state.intro = THREE.MathUtils.damp(state.intro, 1, 0.85, delta);
   state.scaleTarget = THREE.MathUtils.lerp(0.76, 3.95, state.openness);
   state.scale = THREE.MathUtils.damp(state.scale, state.scaleTarget, 3.8, delta);
   state.brightness = THREE.MathUtils.lerp(0.34, 1.18, Math.pow(state.scale / 3.95, 0.92));
@@ -402,6 +408,8 @@ function updateVisualState(time, delta) {
 
   saturnSystem.rotation.y += 0.0008 + state.scale * 0.0004;
   saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.03;
+  saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro);
+  saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1, state.intro));
 
   coreMaterial.uniforms.uTime.value = time;
   coreMaterial.uniforms.uScale.value = 1;
@@ -419,6 +427,7 @@ function updateVisualState(time, delta) {
 
   const cameraTargetZ = THREE.MathUtils.lerp(20, 11.5, state.scale / 3.95);
   camera.position.z = THREE.MathUtils.damp(camera.position.z, cameraTargetZ, 1.8, delta);
+  camera.position.y = THREE.MathUtils.damp(camera.position.y, 2.4, 1.1, delta);
 }
 
 function updatePointerControl(delta) {
@@ -435,6 +444,21 @@ function updatePointerControl(delta) {
     2.8,
     delta,
   );
+}
+
+function updateReadout() {
+  readoutScale.textContent = state.scale.toFixed(2);
+  readoutBrightness.textContent = state.brightness.toFixed(2);
+  readoutChaos.textContent = state.chaos.toFixed(2);
+
+  let mode = "Stable";
+  if (state.chaos > 0.65) {
+    mode = "Burst";
+  } else if (state.chaos > 0.15) {
+    mode = "Transition";
+  }
+
+  readoutMode.textContent = mode;
 }
 
 function onResize() {
@@ -530,6 +554,7 @@ function animate() {
   updateVisualState(elapsed, delta);
   updateCore(elapsed);
   updateRing(elapsed);
+  updateReadout();
   renderer.render(scene, camera);
 }
 
