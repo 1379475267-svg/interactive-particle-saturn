@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Interactive Particle Saturn</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <canvas id="scene"></canvas>
+
+      <div class="hud">
+        <div class="hud-card">
+          <p class="eyebrow">Particle Saturn Study</p>
+          <h1>Interactive Particle Saturn</h1>
+          <p class="description">
+            Use the mouse wheel or vertical drag to expand, brighten, and
+            destabilize Saturn. Pull back to restore stable orbital motion.
+          </p>
+        </div>
+
+        <div class="controls">
+          <button id="fullscreenBtn" type="button">Fullscreen</button>
+        </div>
+
+        <div class="status-panel">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Loading scene state</span>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const bootStatus = document.getElementById("statusText");
+      const bootDot = document.getElementById("statusDot");
+      bootStatus.textContent = "Booting app...";
+
+      window.addEventListener("error", (event) => {
+        bootStatus.textContent = `Script error: ${event.message || "unknown error"}`;
+        bootDot.classList.remove("live");
+      });
+
+      window.addEventListener("unhandledrejection", (event) => {
+        const message = event.reason?.message || String(event.reason || "unknown rejection");
+        bootStatus.textContent = `Startup failed: ${message}`;
+        bootDot.classList.remove("live");
+      });
+    </script>
+    <script type="module" src="./main.js?v=20260404-4"></script>
+  </body>
+</html>
