@@ -172,8 +172,24 @@ const coreMaterial = new THREE.ShaderMaterial({
 const corePoints = new THREE.Points(coreGeometry, coreMaterial);
 coreGroup.add(corePoints);
 
+const coreBody = new THREE.Mesh(
+  new THREE.SphereGeometry(3.68, 64, 64),
+  new THREE.MeshPhysicalMaterial({
+    color: 0x120d09,
+    emissive: 0x1b130d,
+    emissiveIntensity: 0.08,
+    roughness: 0.95,
+    metalness: 0.02,
+    transparent: false,
+    depthWrite: true,
+    depthTest: true,
+  }),
+);
+coreBody.renderOrder = -9;
+coreGroup.add(coreBody);
+
 const coreOccluder = new THREE.Mesh(
-  new THREE.SphereGeometry(3.35, 48, 48),
+  new THREE.SphereGeometry(4.15, 64, 64),
   new THREE.MeshBasicMaterial({
     colorWrite: false,
     depthWrite: true,
@@ -763,6 +779,7 @@ function updateVisualState(time, delta) {
   saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.smoothY * 0.24;
   saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.smoothX * 0.42, 2.1, delta);
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
+  coreBody.scale.setScalar(state.scale * 0.98);
   coreOccluder.scale.setScalar(state.scale * 1.02);
 
   coreMaterial.uniforms.uTime.value = time;
