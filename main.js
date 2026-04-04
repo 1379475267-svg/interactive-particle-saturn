@@ -172,6 +172,17 @@ const coreMaterial = new THREE.ShaderMaterial({
 const corePoints = new THREE.Points(coreGeometry, coreMaterial);
 coreGroup.add(corePoints);
 
+const coreOccluder = new THREE.Mesh(
+  new THREE.SphereGeometry(3.35, 48, 48),
+  new THREE.MeshBasicMaterial({
+    colorWrite: false,
+    depthWrite: true,
+    depthTest: true,
+  }),
+);
+coreOccluder.renderOrder = -10;
+coreGroup.add(coreOccluder);
+
 const ringCount = 18000;
 const ringPositions = new Float32Array(ringCount * 3);
 const ringSizes = new Float32Array(ringCount);
@@ -752,6 +763,7 @@ function updateVisualState(time, delta) {
   saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.smoothY * 0.24;
   saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.smoothX * 0.42, 2.1, delta);
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
+  coreOccluder.scale.setScalar(state.scale * 1.02);
 
   coreMaterial.uniforms.uTime.value = time;
   coreMaterial.uniforms.uScale.value = 1;
