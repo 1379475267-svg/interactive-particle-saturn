@@ -12,6 +12,7 @@
   <body>
     <div class="app-shell">
       <canvas id="scene"></canvas>
+      <video id="webcam" playsinline muted></video>
       <div class="cursor-glow" id="cursorGlow"></div>
 
       <header class="topbar">
@@ -37,8 +38,8 @@
         <p class="eyebrow">Particle Saturn Study</p>
         <h1>Push the orbit until it breaks.</h1>
         <p class="description">
-          Scroll, drag, double-click, or press space to drive a particle Saturn
-          from stable Kepler-like motion into a near-camera chaos burst.
+          Open and close your hand to scale the particle Saturn, drag to shape
+          the view, and trigger bursts with a double-click or the space bar.
         </p>
       </section>
 
@@ -61,7 +62,7 @@
           </p>
           <div class="info-block">
             <p class="panel-kicker">Controls</p>
-            <p class="panel-line">Scroll: expand or contract</p>
+            <p class="panel-line">Hand open/close: expand or contract</p>
             <p class="panel-line">Drag: reshape scale and viewing angle</p>
             <p class="panel-line">Double-click or Space: trigger an energy burst</p>
           </div>
@@ -97,7 +98,7 @@
       </aside>
 
       <footer class="bottom-hint">
-        <span>Scroll or drag</span>
+        <span>Open hand or drag</span>
         <span>Double-click to burst</span>
         <span>Press I for info</span>
       </footer>

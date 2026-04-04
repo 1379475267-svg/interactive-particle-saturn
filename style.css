@@ -54,6 +54,14 @@ body::before {
   height: 100%;
 }
 
+#webcam {
+  position: fixed;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .cursor-glow {
   position: fixed;
   width: 220px;

@@ -1,6 +1,11 @@
 import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js";
 
+const visionModule = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3");
+const vision = visionModule.default || visionModule;
+const { FilesetResolver, HandLandmarker } = vision;
+
 const canvas = document.querySelector("#scene");
+const webcam = document.querySelector("#webcam");
 const fullscreenBtn = document.querySelector("#fullscreenBtn");
 const infoBtn = document.querySelector("#infoBtn");
 const closeInfoBtn = document.querySelector("#closeInfoBtn");
@@ -465,6 +470,12 @@ const state = {
   orbitSpin: 0,
   shockwave: 0,
   shockwaveActive: false,
+  handLandmarker: null,
+  handReady: false,
+  handVisible: false,
+  handOpenRatio: 0,
+  handOpenRatioTarget: 0.16,
+  lastHandFrame: 0,
 };
 
 const pointer = {
@@ -500,6 +511,82 @@ function triggerBurst(intensity = 1) {
   state.shockwaveActive = true;
   shockwave.visible = true;
   setStatus("Energy burst triggered.", true);
+}
+
+function distance2D(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function computeHandOpenRatio(landmarks) {
+  const thumb = landmarks[4];
+  const index = landmarks[8];
+  const palmLeft = landmarks[5];
+  const palmRight = landmarks[17];
+  const wrist = landmarks[0];
+  const middleBase = landmarks[9];
+
+  const pinchDistance = distance2D(thumb, index);
+  const palmWidth = distance2D(palmLeft, palmRight);
+  const palmLength = distance2D(wrist, middleBase);
+  const normalizer = Math.max(0.08, palmWidth * 0.7 + palmLength * 0.6);
+  const raw = pinchDistance / normalizer;
+
+  return THREE.MathUtils.smoothstep(raw, 0.12, 0.58);
+}
+
+async function initHandTracking() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: "user",
+        width: { ideal: 960 },
+        height: { ideal: 540 },
+      },
+      audio: false,
+    });
+
+    webcam.srcObject = stream;
+    await webcam.play();
+
+    const filesetResolver = await FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.3/wasm",
+    );
+
+    state.handLandmarker = await HandLandmarker.createFromOptions(filesetResolver, {
+      baseOptions: {
+        modelAssetPath:
+          "https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",
+      },
+      runningMode: "VIDEO",
+      numHands: 1,
+      minTrackingConfidence: 0.45,
+      minHandDetectionConfidence: 0.45,
+      minHandPresenceConfidence: 0.45,
+    });
+
+    state.handReady = true;
+    setStatus("Hand tracking ready. Open your hand to drive Saturn.", true);
+  } catch (error) {
+    console.error("Hand tracking initialization failed:", error);
+    setStatus("Camera/hand tracking unavailable. Drag and burst still work.", false);
+  }
+}
+
+function updateHandTracking(now) {
+  if (!state.handLandmarker || webcam.readyState < 2 || now - state.lastHandFrame < 33) {
+    return;
+  }
+
+  state.lastHandFrame = now;
+  const results = state.handLandmarker.detectForVideo(webcam, now);
+
+  if (results.landmarks && results.landmarks.length > 0) {
+    state.handVisible = true;
+    state.handOpenRatioTarget = computeHandOpenRatio(results.landmarks[0]);
+  } else {
+    state.handVisible = false;
+    state.handOpenRatioTarget *= 0.96;
+  }
 }
 
 function solveKepler(meanAnomaly, eccentricity) {
@@ -720,6 +807,17 @@ function updateVisualState(time, delta) {
 }
 
 function updatePointerControl(delta) {
+  state.handOpenRatio = THREE.MathUtils.damp(
+    state.handOpenRatio,
+    state.handOpenRatioTarget,
+    6.5,
+    delta,
+  );
+
+  state.opennessTarget = state.handReady
+    ? THREE.MathUtils.clamp(state.handOpenRatio, 0, 1)
+    : state.opennessTarget;
+
   state.openness = THREE.MathUtils.damp(state.openness, state.opennessTarget, 6, delta);
   pointer.rotX = THREE.MathUtils.damp(pointer.rotX, pointer.rotXTarget, 5.2, delta);
   pointer.rotY = THREE.MathUtils.damp(pointer.rotY, pointer.rotYTarget, 5.2, delta);
@@ -741,6 +839,15 @@ function updateReadout() {
   }
 
   readoutMode.textContent = mode;
+
+  if (state.handReady) {
+    const ratio = Math.round(state.handOpenRatio * 100);
+    if (state.handVisible) {
+      setStatus(`Hand control live. Openness ${ratio}%`, true);
+    } else {
+      setStatus("Show one hand to drive Saturn.", false);
+    }
+  }
 }
 
 function updateCursorGlow() {
@@ -804,10 +911,9 @@ renderer.domElement.addEventListener(
   "wheel",
   (event) => {
     event.preventDefault();
-    const deltaDirection = THREE.MathUtils.clamp(-event.deltaY * 0.0012, -0.18, 0.18);
-    state.opennessTarget = THREE.MathUtils.clamp(state.opennessTarget + deltaDirection, 0, 1);
-    state.pulseTarget = Math.max(state.pulseTarget, Math.abs(deltaDirection) * 0.8);
-    setStatus(`Scroll control. Openness ${(state.opennessTarget * 100).toFixed(0)}%`, true);
+    const deltaDirection = THREE.MathUtils.clamp(-event.deltaY * 0.0009, -0.14, 0.14);
+    pointer.rotYTarget += deltaDirection * 2.2;
+    pointer.rotXTarget = THREE.MathUtils.clamp(pointer.rotXTarget + deltaDirection * 0.6, -0.42, 0.42);
   },
   { passive: false },
 );
@@ -853,6 +959,7 @@ function animate() {
   requestAnimationFrame(animate);
   const delta = clock.getDelta();
   const elapsed = clock.elapsedTime;
+  updateHandTracking(performance.now());
 
   updatePointerControl(delta);
   updateVisualState(elapsed, delta);
@@ -865,5 +972,6 @@ function animate() {
 }
 
 setInfoOpen(false);
-setStatus("Wheel scales. Drag rotates. Double-click or Space bursts.", true);
+setStatus("Starting hand tracking...", false);
+await initHandTracking();
 animate();
