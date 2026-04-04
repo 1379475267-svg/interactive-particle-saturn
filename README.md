@@ -1,11 +1,7 @@
 # 🪐 Interactive Particle Saturn
 
-> 🎬 A cinematic interactive particle system built with Three.js  
-> 用粒子系统重新演绎一个“有生命感”的土星
-
-An interactive Three.js artwork that transforms Saturn into a cinematic particle field with orbital motion, energy bursts, dust haze, shockwaves, and responsive lighting.
-
-这是一个基于 Three.js 的交互式网页作品，将土星表现为一个具有轨道运动、能量爆发、尘埃雾环、冲击波与动态光照的粒子系统。
+> 🎬 A cinematic, gesture-driven particle system built with Three.js
+> 一个基于 Three.js 的“有生命感”的土星粒子交互作品
 
 ---
 
@@ -15,105 +11,139 @@ An interactive Three.js artwork that transforms Saturn into a cinematic particle
 
 ---
 
-## ✨ Highlights
+## ✨ Highlights｜亮点
 
-- 🌌 Dense particle core with layered orbital rings  
-  高密度粒子核心与多层轨道环结构  
+* 🪐 Particle-based Saturn (core + orbital rings)
+  粒子构成的土星（核心 + 多层轨道环）
 
-- 🪐 Kepler-inspired orbital motion & radius-dependent speed  
-  参考开普勒直觉的轨道运动与速度变化  
+* 🖐️ Real-time hand gesture control
+  基于摄像头的实时手势控制（张手 / 握拳）
 
-- 💡 Brightness growth tied to scale expansion  
-  随尺度变化动态增强的亮度表现  
+* 🪐 Kepler-inspired orbital motion
+  参考开普勒直觉的轨道运动
 
-- 💥 Chaos burst near the camera  
-  靠近镜头时的混沌爆发效果  
+* 💥 Chaos burst near camera
+  靠近屏幕时的混沌爆散效果
 
-- 🌫 Dust haze ring for spatial depth  
-  用于增强空间层次的尘埃雾环  
+* 🌫 Multi-layer motion system
+  多层粒子运动系统（核心 / 环 / 拖尾 / 尘埃）
 
-- 🌊 Shockwave pulse across the ring plane  
-  沿环面扩散的冲击波脉冲  
-
-- 🖱 Pointer-driven parallax & lighting response  
-  基于指针的视差与光照反馈  
-
-- 📱 Minimal overlay for both desktop & mobile  
-  同时适配桌面与移动端的极简说明层  
+* 🎛 Smooth cinematic transitions
+  平滑过渡的电影感动态变化
 
 ---
 
-## 🎮 Interaction
+## 🎮 Interaction｜交互方式
 
-| Action | Effect |
-|------|--------|
-| 🖱 Mouse wheel | Scale Saturn in / out |
-| 🖐 Drag | Rotate the view |
-| 💥 Double-click / Space | Trigger energy burst |
-| ℹ `I` key | Toggle info panel |
-| 🖥 Fullscreen | Enter presentation mode |
+| Action                  | Effect                              |
+| ----------------------- | ----------------------------------- |
+| 🖐️ Open hand           | Expand Saturn & increase brightness |
+| ✊ Close hand            | Contract Saturn & stabilize system  |
+| 🖱️ Drag                | Rotate camera view                  |
+| 💥 Double click / Space | Trigger chaos burst                 |
+| ⛶ Fullscreen            | Enter immersive mode                |
 
----
-
-## 🎬 Visual System
-
-### 🪐 Orbital System
-
-Ring particles follow elliptical orbital parameters and time-based angular motion, avoiding the look of a flat rotating texture.
-
-环粒子使用椭圆轨道参数与时间驱动角运动，使整体更接近真实轨道群，而不是简单的旋转贴图。
+| 操作         | 效果        |
+| ---------- | --------- |
+| 🖐️ 张开手    | 放大土星，提高亮度 |
+| ✊ 收拢手      | 收缩系统，恢复稳定 |
+| 🖱️ 拖拽     | 旋转视角      |
+| 💥 双击 / 空格 | 触发能量爆发    |
+| ⛶ 全屏       | 进入沉浸模式    |
 
 ---
 
-### 💥 Cinematic Burst
+## 🧠 How It Works｜原理说明
 
-When energy is triggered, the system simultaneously pushes:
+### 1️⃣ Gesture Detection｜手势识别
 
-- Scale  
-- Exposure  
-- Light intensity  
-- Color temperature  
-- Orbital stability  
+* Uses MediaPipe Hand Landmarker
+* Tracks hand landmarks in real time
+* Converts hand openness into a normalized value
 
-从而形成更强烈的电影镜头感与视觉冲击。
-
----
-
-### 🌌 Motion Layers
-
-The visual stack is composed of multiple motion layers:
-
-- Main ring particles  
-- Ring trail particles  
-- Dust haze ring  
-- Core particle sphere  
-- Shockwave pulse  
-
-视觉效果由多个运动层叠加构成：
-
-- 主环粒子  
-- 轨道拖尾粒子  
-- 尘埃雾环  
-- 核心粒子球  
-- 冲击波  
+使用 MediaPipe 手部识别模型
+实时获取手部关键点
+并计算“手掌张开程度”作为控制变量
 
 ---
 
-## 🛠 Tech Stack
+### 2️⃣ Interaction Mapping｜交互映射
 
-- ⚡ Three.js (WebGL rendering)  
-- 🎨 Custom particle shaders  
-- ✨ Additive blending for glow effects  
-- 🎯 Damped interaction system  
-- 🧠 Physically-inspired orbital approximation  
+* `openRatio → scale`
+* `openRatio → brightness`
+* `openRatio → chaos`
+
+手势张开程度映射为：
+
+* 尺度变化
+* 亮度变化
+* 混沌强度
 
 ---
 
-## 📦 Project Structure
+### 3️⃣ Particle System｜粒子系统
 
-```text
-interactive-particle-saturn/
-├─ index.html
-├─ style.css
-├─ main.js
-└─ README.md
+* Core: dense spherical particle cluster
+* Rings: layered orbital particle bands
+* Dust & trail: enhance depth and motion
+
+由多个层次构成：
+
+* 核心粒子球
+* 多层轨道环
+* 拖尾与尘埃增强空间感
+
+---
+
+### 4️⃣ Chaos System｜混沌系统
+
+* Triggered near screen or by interaction
+* Breaks orbital stability into controlled disorder
+
+在接近屏幕或交互增强时触发
+打破轨道秩序，形成可控的混沌状态
+
+---
+
+## 🧩 Tech Stack｜技术栈
+
+* Three.js (WebGL rendering)
+* MediaPipe (Hand Landmarker)
+* Custom GLSL shaders
+* ES Modules
+* GitHub Pages
+
+---
+
+## ⚠️ Notes｜注意事项
+
+* Camera permission is required
+  需要开启摄像头权限
+
+* Best experience on desktop Chrome
+  推荐使用桌面端 Chrome 浏览器
+
+* First load may take a few seconds
+  首次加载需要时间（模型加载）
+
+---
+
+## 🔥 Future Work｜未来优化
+
+* More gesture types
+  更多手势交互
+
+* Multi-hand interaction
+  双手控制
+
+* Audio-reactive mode
+  音频驱动模式
+
+* Better chaos choreography
+  更精细的混沌演出
+
+---
+
+## 📄 License
+
+MIT
