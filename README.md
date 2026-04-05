@@ -5,6 +5,30 @@
 
 ---
 
+A cinematic Three.js experiment featuring a particle-based Saturn system with gesture interaction.
+
+---
+
+## 🌌 Preview
+
+<p align="center">
+  <img src="./assets/interactive-particle-saturn.gif" width="100%" />
+</p>
+
+---
+
+## ✨ Features
+
+- 🪐 Realistic Saturn-inspired planet and rings  
+- 🌠 Particle-based dynamic ring system  
+- ✋ Gesture / mouse interaction  
+- 🎬 Cinematic motion and lighting  
+
+---
+
+## 🔗 Live Demo
+
+👉 https://1379475267-svg.github.io/interactive-particle-saturn/
 ## 🌍 在线体验 | Live Demo
 
 👉 https://1379475267-svg.github.io/interactive-particle-saturn/
