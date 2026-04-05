@@ -199,6 +199,17 @@ const coreOccluder = new THREE.Mesh(
 coreOccluder.renderOrder = -10;
 coreGroup.add(coreOccluder);
 
+const ringOccluder = new THREE.Mesh(
+  new THREE.SphereGeometry(4.45, 64, 64),
+  new THREE.MeshBasicMaterial({
+    colorWrite: false,
+    depthWrite: true,
+    depthTest: true,
+  }),
+);
+ringOccluder.renderOrder = -8;
+saturnSystem.add(ringOccluder);
+
 const ringCount = 18000;
 const ringPositions = new Float32Array(ringCount * 3);
 const ringSizes = new Float32Array(ringCount);
@@ -254,6 +265,7 @@ ringTrailGeometry.setAttribute("color", new THREE.BufferAttribute(ringColors, 3)
 
 const ringMaterial = new THREE.ShaderMaterial({
   transparent: true,
+  depthTest: true,
   depthWrite: false,
   vertexColors: true,
   blending: THREE.AdditiveBlending,
@@ -289,10 +301,12 @@ const ringMaterial = new THREE.ShaderMaterial({
 });
 
 const ringPoints = new THREE.Points(ringGeometry, ringMaterial);
+ringPoints.renderOrder = 2;
 ringGroup.add(ringPoints);
 
 const ringTrailMaterial = new THREE.ShaderMaterial({
   transparent: true,
+  depthTest: true,
   depthWrite: false,
   vertexColors: true,
   blending: THREE.AdditiveBlending,
@@ -328,6 +342,7 @@ const ringTrailMaterial = new THREE.ShaderMaterial({
 });
 
 const ringTrailPoints = new THREE.Points(ringTrailGeometry, ringTrailMaterial);
+ringTrailPoints.renderOrder = 1;
 ringGroup.add(ringTrailPoints);
 
 const dustCount = 9000;
@@ -365,6 +380,7 @@ dustGeometry.setAttribute("color", new THREE.BufferAttribute(dustColors, 3));
 
 const dustMaterial = new THREE.ShaderMaterial({
   transparent: true,
+  depthTest: true,
   depthWrite: false,
   vertexColors: true,
   blending: THREE.AdditiveBlending,
@@ -400,6 +416,7 @@ const dustMaterial = new THREE.ShaderMaterial({
 });
 
 const dustPoints = new THREE.Points(dustGeometry, dustMaterial);
+dustPoints.renderOrder = 3;
 ringGroup.add(dustPoints);
 
 const shockwave = new THREE.Mesh(
@@ -781,6 +798,7 @@ function updateVisualState(time, delta) {
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
   coreBody.scale.setScalar(state.scale * 0.98);
   coreOccluder.scale.setScalar(state.scale * 1.02);
+  ringOccluder.scale.setScalar(state.scale * THREE.MathUtils.lerp(1.08, 1.14, state.pulse));
 
   coreMaterial.uniforms.uTime.value = time;
   coreMaterial.uniforms.uScale.value = 1;
@@ -894,6 +912,8 @@ function onResize() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   coreMaterial.uniforms.uPixelRatio.value = renderer.getPixelRatio();
   ringMaterial.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+  ringTrailMaterial.uniforms.uPixelRatio.value = renderer.getPixelRatio();
+  dustMaterial.uniforms.uPixelRatio.value = renderer.getPixelRatio();
 }
 
 function updatePointerPosition(clientX, clientY) {
