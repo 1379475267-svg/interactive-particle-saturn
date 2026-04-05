@@ -332,6 +332,7 @@ const coreOccluder = new THREE.Mesh(
   }),
 );
 coreOccluder.renderOrder = -9;
+coreOccluder.visible = false;
 coreGroup.add(coreOccluder);
 
 const ringOccluder = new THREE.Mesh(
@@ -963,8 +964,7 @@ function updateVisualState(time, delta) {
   saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.smoothY * 0.24;
   saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.smoothX * 0.42, 2.1, delta);
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
-  coreBody.scale.setScalar(state.scale * 0.98);
-  coreOccluder.scale.setScalar(state.scale * 1.02);
+  coreBody.scale.setScalar(1 + state.pulse * 0.015);
   saturnRingMesh.scale.setScalar(state.scale);
   ringOccluder.scale.setScalar(state.scale * THREE.MathUtils.lerp(1.08, 1.14, state.pulse));
 
@@ -1009,7 +1009,10 @@ function updateVisualState(time, delta) {
     Math.max(0, state.pulse - 0.35) * 0.18;
 
   const cameraBreath = Math.sin(time * 0.42) * 0.24 + Math.sin(time * 0.17) * 0.16;
-  const cameraTargetZ = THREE.MathUtils.lerp(20, 11.5, state.scale / 3.95) + cameraBreath;
+  const cameraTargetZ = Math.max(
+    14.5,
+    THREE.MathUtils.lerp(20, 14.5, state.scale / 3.95) + cameraBreath,
+  );
   camera.position.z = THREE.MathUtils.damp(camera.position.z, cameraTargetZ, 1.8, delta);
   camera.position.x = THREE.MathUtils.damp(camera.position.x, pointer.smoothX * 0.85, 1.8, delta);
   camera.position.y = THREE.MathUtils.damp(
