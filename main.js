@@ -344,6 +344,7 @@ const ringOccluder = new THREE.Mesh(
   }),
 );
 ringOccluder.renderOrder = -8;
+ringOccluder.visible = false;
 saturnSystem.add(ringOccluder);
 
 const saturnRingMesh = new THREE.Mesh(
@@ -966,7 +967,6 @@ function updateVisualState(time, delta) {
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
   coreBody.scale.setScalar(1 + state.pulse * 0.015);
   saturnRingMesh.scale.setScalar(state.scale);
-  ringOccluder.scale.setScalar(state.scale * THREE.MathUtils.lerp(1.08, 1.14, state.pulse));
 
   coreBody.material.emissiveIntensity = THREE.MathUtils.lerp(0.01, 0.05, state.pulse * 0.5 + state.brightness * 0.2);
   coreBody.material.roughness = THREE.MathUtils.lerp(0.94, 0.82, state.brightness);
