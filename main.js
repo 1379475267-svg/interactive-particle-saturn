@@ -313,11 +313,11 @@ const coreBody = new THREE.Mesh(
   new THREE.SphereGeometry(3.68, 96, 96),
   new THREE.MeshStandardMaterial({
     map: saturnMaps.bodyColor,
-    color: 0xf7e7c0,
+    color: 0xfaedcd,
     roughness: 0.9,
     metalness: 0,
-    emissive: 0x1c1308,
-    emissiveIntensity: 0.02,
+    emissive: 0x2f2414,
+    emissiveIntensity: 0.045,
   }),
 );
 coreBody.renderOrder = -10;
@@ -634,8 +634,8 @@ const shockwave = new THREE.Mesh(
 shockwave.rotation.x = Math.PI / 2;
 shockwave.visible = false;
 ringGroup.add(shockwave);
-ringGroup.rotation.x = THREE.MathUtils.degToRad(60);
-ringGroup.rotation.z = THREE.MathUtils.degToRad(8);
+ringGroup.rotation.x = THREE.MathUtils.degToRad(59);
+ringGroup.rotation.z = THREE.MathUtils.degToRad(6);
 
 const aura = new THREE.Mesh(
   new THREE.SphereGeometry(3.9, 64, 64),
@@ -968,8 +968,8 @@ function updateVisualState(time, delta) {
   coreBody.scale.setScalar(1 + state.pulse * 0.015);
   saturnRingMesh.scale.setScalar(state.scale);
 
-  coreBody.material.emissiveIntensity = THREE.MathUtils.lerp(0.01, 0.05, state.pulse * 0.5 + state.brightness * 0.2);
-  coreBody.material.roughness = THREE.MathUtils.lerp(0.94, 0.82, state.brightness);
+  coreBody.material.emissiveIntensity = THREE.MathUtils.lerp(0.04, 0.085, state.pulse * 0.45 + state.brightness * 0.25);
+  coreBody.material.roughness = THREE.MathUtils.lerp(0.88, 0.8, state.brightness);
   saturnRingMesh.material.opacity = THREE.MathUtils.lerp(0.82, 0.98, state.brightness);
   coreMaterial.uniforms.uTime.value = time;
   coreMaterial.uniforms.uScale.value = 1;
