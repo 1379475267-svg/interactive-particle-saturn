@@ -93,6 +93,143 @@ scene.add(stars);
 const baseSaturnColor = new THREE.Color(0xf8d49a);
 const ringColor = new THREE.Color(0xffe0b8);
 const chaosColor = new THREE.Color(0xdaf1ff);
+const textureLoader = new THREE.TextureLoader();
+
+const saturnTexturePaths = {
+  bodyColor: null,
+  ringColor: null,
+  ringAlpha: null,
+};
+
+function configureCanvasTexture(texture) {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function makeSaturnBodyTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 1024;
+  const ctx = canvas.getContext("2d");
+
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, "#f7e7bf");
+  gradient.addColorStop(0.22, "#f0d79f");
+  gradient.addColorStop(0.48, "#dfbf7d");
+  gradient.addColorStop(0.68, "#e8c98d");
+  gradient.addColorStop(1, "#f4e2b8");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < 70; i += 1) {
+    const y = (i / 69) * canvas.height;
+    const bandHeight = canvas.height * (0.008 + Math.random() * 0.028);
+    const alpha = 0.03 + Math.random() * 0.08;
+    const lightness = 62 + Math.random() * 22;
+    const hue = 38 + Math.random() * 10;
+    const sat = 42 + Math.random() * 18;
+    ctx.fillStyle = `hsla(${hue}, ${sat}%, ${lightness}%, ${alpha})`;
+    ctx.fillRect(0, y, canvas.width, bandHeight);
+  }
+
+  for (let i = 0; i < 18; i += 1) {
+    const y = (0.08 + i / 17 * 0.84) * canvas.height;
+    ctx.fillStyle = `rgba(255, 235, 190, ${0.018 + Math.random() * 0.03})`;
+    ctx.fillRect(0, y, canvas.width, canvas.height * (0.02 + Math.random() * 0.035));
+  }
+
+  return configureCanvasTexture(new THREE.CanvasTexture(canvas));
+}
+
+function makeSaturnRingColorTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, "#5c5a57");
+  gradient.addColorStop(0.08, "#bbb1a0");
+  gradient.addColorStop(0.18, "#f0e2c2");
+  gradient.addColorStop(0.33, "#b29f82");
+  gradient.addColorStop(0.5, "#e8dcc4");
+  gradient.addColorStop(0.68, "#9e8d75");
+  gradient.addColorStop(0.86, "#ddd0b5");
+  gradient.addColorStop(1, "#6d665d");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < 220; i += 1) {
+    const x = Math.random() * canvas.width;
+    const width = 2 + Math.random() * 22;
+    const alpha = 0.04 + Math.random() * 0.12;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(x, 0, width, canvas.height);
+  }
+
+  return configureCanvasTexture(new THREE.CanvasTexture(canvas));
+}
+
+function makeSaturnRingAlphaTexture() {
+  const canvas = document.createElement("canvas");
+  canvas.width = 2048;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "rgba(0,0,0,0)";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const gradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
+  gradient.addColorStop(0, "rgba(0,0,0,0)");
+  gradient.addColorStop(0.06, "rgba(110,110,110,0.35)");
+  gradient.addColorStop(0.18, "rgba(255,255,255,0.95)");
+  gradient.addColorStop(0.34, "rgba(150,150,150,0.55)");
+  gradient.addColorStop(0.52, "rgba(255,255,255,0.92)");
+  gradient.addColorStop(0.7, "rgba(135,135,135,0.45)");
+  gradient.addColorStop(0.88, "rgba(245,245,245,0.8)");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < 260; i += 1) {
+    const x = Math.random() * canvas.width;
+    const width = 1 + Math.random() * 16;
+    const alpha = 0.05 + Math.random() * 0.18;
+    ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+    ctx.fillRect(x, 0, width, canvas.height);
+  }
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+function loadTextureOrFallback(path, fallbackFactory, color = true) {
+  if (!path) {
+    return fallbackFactory();
+  }
+
+  const texture = textureLoader.load(path);
+  if (color) {
+    texture.colorSpace = THREE.SRGBColorSpace;
+  }
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return texture;
+}
+
+const saturnMaps = {
+  bodyColor: loadTextureOrFallback(saturnTexturePaths.bodyColor, makeSaturnBodyTexture, true),
+  ringColor: loadTextureOrFallback(saturnTexturePaths.ringColor, makeSaturnRingColorTexture, true),
+  ringAlpha: loadTextureOrFallback(saturnTexturePaths.ringAlpha, makeSaturnRingAlphaTexture, false),
+};
 
 const coreCount = 22000;
 const corePositions = new Float32Array(coreCount * 3);
@@ -173,113 +310,14 @@ const corePoints = new THREE.Points(coreGeometry, coreMaterial);
 coreGroup.add(corePoints);
 
 const coreBody = new THREE.Mesh(
-  new THREE.SphereGeometry(3.68, 64, 64),
-  new THREE.ShaderMaterial({
-    transparent: false,
-    depthWrite: true,
-    depthTest: true,
-    uniforms: {
-      uTime: { value: 0 },
-      uBrightness: { value: 1 },
-      uPulse: { value: 0 },
-      uBaseColor: { value: new THREE.Color(0xe7cf98) },
-      uWarmColor: { value: new THREE.Color(0xf0bf72) },
-      uEquatorColor: { value: new THREE.Color(0xe4ba6e) },
-      uPolarColor: { value: new THREE.Color(0xf5e6bc) },
-      uShadowColor: { value: new THREE.Color(0x8f7856) },
-      uCoolColor: { value: new THREE.Color(0xaedfff) },
-      uRimColor: { value: new THREE.Color(0xffefc2) },
-    },
-    vertexShader: `
-      varying vec3 vNormal;
-      varying vec3 vViewDir;
-      varying vec3 vWorldPos;
-      varying vec3 vObjectPos;
-
-      void main() {
-        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-        vec4 mvPosition = viewMatrix * worldPosition;
-
-        vWorldPos = worldPosition.xyz;
-        vObjectPos = position;
-        vNormal = normalize(normalMatrix * normal);
-        vViewDir = normalize(-mvPosition.xyz);
-
-        gl_Position = projectionMatrix * mvPosition;
-      }
-    `,
-    fragmentShader: `
-      uniform float uTime;
-      uniform float uBrightness;
-      uniform float uPulse;
-      uniform vec3 uBaseColor;
-      uniform vec3 uWarmColor;
-      uniform vec3 uEquatorColor;
-      uniform vec3 uPolarColor;
-      uniform vec3 uShadowColor;
-      uniform vec3 uCoolColor;
-      uniform vec3 uRimColor;
-
-      varying vec3 vNormal;
-      varying vec3 vViewDir;
-      varying vec3 vWorldPos;
-      varying vec3 vObjectPos;
-
-      void main() {
-        vec3 normal = normalize(vNormal);
-        vec3 viewDir = normalize(vViewDir);
-
-        float ndv = clamp(dot(normal, viewDir), 0.0, 1.0);
-        float fresnel = pow(1.0 - ndv, 3.35);
-
-        float lat = vObjectPos.y / 3.68;
-        float drift = uTime * 0.045;
-
-        float bandA = sin(lat * 13.5 + drift);
-        float bandB = sin(lat * 23.0 - drift * 0.65);
-        float bandC = sin(lat * 38.0 + drift * 0.95);
-        float bands = bandA * 0.54 + bandB * 0.24 + bandC * 0.08;
-        bands = 0.5 + 0.5 * bands;
-        bands = smoothstep(0.22, 0.8, bands);
-
-        float equatorMask = 1.0 - smoothstep(0.08, 0.78, abs(lat));
-        float equatorGlow = pow(equatorMask, 1.45);
-        float polarMask = smoothstep(0.58, 0.98, abs(lat));
-        float polarGlow = pow(polarMask, 1.1);
-
-        vec3 lightDir = normalize(vec3(0.9, 0.35, 1.2));
-        float diffuse = max(dot(normal, lightDir), 0.0);
-        float wrapDiffuse = clamp((dot(normal, lightDir) + 0.42) / 1.42, 0.0, 1.0);
-        float centerLift = pow(ndv, 1.48);
-        float bodyPresence = smoothstep(0.0, 0.85, ndv);
-
-        vec3 baseColor = mix(uBaseColor, uWarmColor, 0.28);
-        vec3 bandColor = mix(uBaseColor, uWarmColor, bands * 0.42 + 0.12);
-        vec3 equatorColor = mix(bandColor, uEquatorColor, 0.52 + bands * 0.08);
-        vec3 polarColor = mix(uBaseColor, uPolarColor, 0.62);
-
-        vec3 color = mix(baseColor, bandColor, 0.48);
-        color = mix(color, equatorColor, equatorGlow * 0.36);
-        color = mix(color, polarColor, polarGlow * 0.2);
-
-        vec3 shadowMix = mix(uShadowColor, uCoolColor, 0.16);
-        color = mix(shadowMix, color, 0.54 + wrapDiffuse * 0.58);
-        color *= mix(0.92, 1.1, wrapDiffuse);
-
-        color += uBaseColor * centerLift * 0.24;
-        color += uWarmColor * bodyPresence * 0.08;
-        color += mix(uBaseColor, uWarmColor, 0.4) * bands * 0.05;
-        color += uEquatorColor * equatorGlow * 0.11;
-        color += uPolarColor * polarGlow * 0.07;
-        color += uRimColor * fresnel * (0.08 + uBrightness * 0.05 + uPulse * 0.04);
-
-        color *= 0.97 + uBrightness * 0.14;
-        color += diffuse * 0.035;
-        color = max(color, vec3(0.22, 0.19, 0.14));
-
-        gl_FragColor = vec4(color, 1.0);
-      }
-    `,
+  new THREE.SphereGeometry(3.68, 96, 96),
+  new THREE.MeshStandardMaterial({
+    map: saturnMaps.bodyColor,
+    color: 0xf6e2b8,
+    roughness: 0.9,
+    metalness: 0,
+    emissive: 0x1c1308,
+    emissiveIntensity: 0.02,
   }),
 );
 coreBody.renderOrder = -9;
@@ -306,6 +344,38 @@ const ringOccluder = new THREE.Mesh(
 );
 ringOccluder.renderOrder = -8;
 saturnSystem.add(ringOccluder);
+
+const saturnRingMesh = new THREE.Mesh(
+  new THREE.RingGeometry(4.9, 11.9, 256, 8),
+  new THREE.MeshStandardMaterial({
+    map: saturnMaps.ringColor,
+    alphaMap: saturnMaps.ringAlpha,
+    color: 0xf2dfc0,
+    transparent: true,
+    opacity: 0.96,
+    side: THREE.DoubleSide,
+    roughness: 0.94,
+    metalness: 0,
+    depthWrite: false,
+    alphaTest: 0.06,
+  }),
+);
+saturnRingMesh.rotation.x = Math.PI / 2;
+saturnRingMesh.renderOrder = 0;
+
+const saturnRingUv = saturnRingMesh.geometry.getAttribute("uv");
+const saturnRingPosition = saturnRingMesh.geometry.getAttribute("position");
+const saturnRingInnerRadius = 4.9;
+const saturnRingOuterRadius = 11.9;
+for (let i = 0; i < saturnRingUv.count; i += 1) {
+  const x = saturnRingPosition.getX(i);
+  const y = saturnRingPosition.getY(i);
+  const radius = Math.sqrt(x * x + y * y);
+  const radial = (radius - saturnRingInnerRadius) / (saturnRingOuterRadius - saturnRingInnerRadius);
+  saturnRingUv.setXY(i, radial, 0.5);
+}
+saturnRingUv.needsUpdate = true;
+ringGroup.add(saturnRingMesh);
 
 const ringCount = 18000;
 const ringPositions = new Float32Array(ringCount * 3);
@@ -588,8 +658,8 @@ const aura = new THREE.Mesh(
       varying vec3 vNormal;
 
       void main() {
-        float fresnel = pow(1.0 - abs(vNormal.z), 3.1);
-        gl_FragColor = vec4(uColor * uBrightness, fresnel * 0.22);
+        float fresnel = pow(1.0 - abs(vNormal.z), 3.8);
+        gl_FragColor = vec4(uColor * uBrightness, fresnel * 0.14);
       }
     `,
   }),
@@ -895,11 +965,12 @@ function updateVisualState(time, delta) {
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
   coreBody.scale.setScalar(state.scale * 0.98);
   coreOccluder.scale.setScalar(state.scale * 1.02);
+  saturnRingMesh.scale.setScalar(state.scale);
   ringOccluder.scale.setScalar(state.scale * THREE.MathUtils.lerp(1.08, 1.14, state.pulse));
 
-  coreBody.material.uniforms.uTime.value = time;
-  coreBody.material.uniforms.uBrightness.value = state.brightness;
-  coreBody.material.uniforms.uPulse.value = state.pulse;
+  coreBody.material.emissiveIntensity = THREE.MathUtils.lerp(0.01, 0.05, state.pulse * 0.5 + state.brightness * 0.2);
+  coreBody.material.roughness = THREE.MathUtils.lerp(0.94, 0.82, state.brightness);
+  saturnRingMesh.material.opacity = THREE.MathUtils.lerp(0.82, 0.98, state.brightness);
   coreMaterial.uniforms.uTime.value = time;
   coreMaterial.uniforms.uScale.value = 1;
   coreMaterial.uniforms.uChaos.value = state.chaos;
@@ -916,22 +987,22 @@ function updateVisualState(time, delta) {
   ringTrailMaterial.uniforms.uPulse.value = state.pulse;
   dustMaterial.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.8, 1.35, state.brightness);
   dustMaterial.uniforms.uPulse.value = state.pulse;
-  aura.material.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.1, 0.42, state.brightness + state.pulse * 0.12);
+  aura.material.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.04, 0.16, state.brightness + state.pulse * 0.08);
   shockwave.material.uniforms.uTime.value = time;
   shockwave.material.uniforms.uPulse.value = state.pulse;
   shockwave.material.uniforms.uProgress.value = state.shockwaveActive ? state.shockwave : 0;
 
-  rimLight.intensity = THREE.MathUtils.lerp(3.1, 13.5, state.brightness) + state.pulse * 5.6;
-  fillLight.intensity = THREE.MathUtils.lerp(1.8, 5.2, state.brightness) + state.pulse * 1.4;
-  backLight.intensity = 2.8 + state.chaos * 2.4 + state.pulse * 1.8;
-  ambient.intensity = 0.62 + state.pulse * 0.16;
-  rimLight.color.copy(new THREE.Color(0xfff2d3).lerp(new THREE.Color(0xfff8ea), state.pulse * 0.5));
-  fillLight.color.copy(new THREE.Color(0x6ea8ff).lerp(new THREE.Color(0x8de0ff), state.pulse * 0.7));
-  backLight.color.copy(new THREE.Color(0x95d8ff).lerp(new THREE.Color(0xbff5ff), state.pulse * 0.7));
-  rimLight.position.x = pointer.smoothX * 8;
-  rimLight.position.y = -pointer.smoothY * 5;
-  fillLight.position.x = -18 + pointer.smoothX * -5;
-  fillLight.position.y = 10 + pointer.smoothY * 4;
+  rimLight.intensity = THREE.MathUtils.lerp(4.2, 7.8, state.brightness) + state.pulse * 1.8;
+  fillLight.intensity = THREE.MathUtils.lerp(1.6, 2.9, state.brightness) + state.pulse * 0.8;
+  backLight.intensity = 1.2 + state.chaos * 0.8 + state.pulse * 0.6;
+  ambient.intensity = 0.42 + state.pulse * 0.08;
+  rimLight.color.copy(new THREE.Color(0xffefcc).lerp(new THREE.Color(0xfff7e8), state.pulse * 0.25));
+  fillLight.color.copy(new THREE.Color(0xb5d2ff).lerp(new THREE.Color(0xcce6ff), state.pulse * 0.35));
+  backLight.color.copy(new THREE.Color(0x88b7ef).lerp(new THREE.Color(0xb8ddff), state.pulse * 0.35));
+  rimLight.position.x = 10 + pointer.smoothX * 2.5;
+  rimLight.position.y = 3 - pointer.smoothY * 1.8;
+  fillLight.position.x = -20 + pointer.smoothX * -2.2;
+  fillLight.position.y = 8 + pointer.smoothY * 2.4;
   renderer.toneMappingExposure =
     THREE.MathUtils.lerp(0.95, 1.72, state.brightness) +
     state.pulse * 0.22 +
