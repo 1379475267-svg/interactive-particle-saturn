@@ -230,50 +230,52 @@ const coreBody = new THREE.Mesh(
         vec3 viewDir = normalize(vViewDir);
 
         float ndv = clamp(dot(normal, viewDir), 0.0, 1.0);
-        float fresnel = pow(1.0 - ndv, 3.0);
+        float fresnel = pow(1.0 - ndv, 3.35);
 
         float lat = vObjectPos.y / 3.68;
         float drift = uTime * 0.045;
 
-        float bandA = sin(lat * 16.0 + drift);
-        float bandB = sin(lat * 29.0 - drift * 0.7);
-        float bandC = sin(lat * 52.0 + drift * 1.1);
-        float bands = bandA * 0.5 + bandB * 0.28 + bandC * 0.12;
+        float bandA = sin(lat * 13.5 + drift);
+        float bandB = sin(lat * 23.0 - drift * 0.65);
+        float bandC = sin(lat * 38.0 + drift * 0.95);
+        float bands = bandA * 0.54 + bandB * 0.24 + bandC * 0.08;
         bands = 0.5 + 0.5 * bands;
-        bands = smoothstep(0.18, 0.82, bands);
+        bands = smoothstep(0.22, 0.8, bands);
 
-        float equatorMask = 1.0 - smoothstep(0.1, 0.82, abs(lat));
-        float equatorGlow = pow(equatorMask, 1.6);
-        float polarMask = smoothstep(0.54, 0.98, abs(lat));
-        float polarGlow = pow(polarMask, 1.2);
+        float equatorMask = 1.0 - smoothstep(0.08, 0.78, abs(lat));
+        float equatorGlow = pow(equatorMask, 1.45);
+        float polarMask = smoothstep(0.58, 0.98, abs(lat));
+        float polarGlow = pow(polarMask, 1.1);
 
         vec3 lightDir = normalize(vec3(0.9, 0.35, 1.2));
         float diffuse = max(dot(normal, lightDir), 0.0);
-        float wrapDiffuse = clamp((dot(normal, lightDir) + 0.35) / 1.35, 0.0, 1.0);
-        float centerLift = pow(ndv, 1.7);
+        float wrapDiffuse = clamp((dot(normal, lightDir) + 0.42) / 1.42, 0.0, 1.0);
+        float centerLift = pow(ndv, 1.48);
+        float bodyPresence = smoothstep(0.0, 0.85, ndv);
 
-        vec3 baseColor = mix(uBaseColor, uWarmColor, 0.18);
-        vec3 bandColor = mix(uWarmColor, uBaseColor, bands * 0.58);
-        vec3 equatorColor = mix(bandColor, uEquatorColor, 0.5 + bands * 0.12);
-        vec3 polarColor = mix(uBaseColor, uPolarColor, 0.58);
+        vec3 baseColor = mix(uBaseColor, uWarmColor, 0.28);
+        vec3 bandColor = mix(uBaseColor, uWarmColor, bands * 0.42 + 0.12);
+        vec3 equatorColor = mix(bandColor, uEquatorColor, 0.52 + bands * 0.08);
+        vec3 polarColor = mix(uBaseColor, uPolarColor, 0.62);
 
-        vec3 color = mix(baseColor, bandColor, 0.42);
-        color = mix(color, equatorColor, equatorGlow * 0.32);
-        color = mix(color, polarColor, polarGlow * 0.22);
+        vec3 color = mix(baseColor, bandColor, 0.48);
+        color = mix(color, equatorColor, equatorGlow * 0.36);
+        color = mix(color, polarColor, polarGlow * 0.2);
 
         vec3 shadowMix = mix(uShadowColor, uCoolColor, 0.16);
-        color = mix(shadowMix, color, 0.48 + wrapDiffuse * 0.64);
-        color *= mix(0.88, 1.12, wrapDiffuse);
+        color = mix(shadowMix, color, 0.54 + wrapDiffuse * 0.58);
+        color *= mix(0.92, 1.1, wrapDiffuse);
 
-        color += uBaseColor * centerLift * 0.18;
-        color += uWarmColor * bands * 0.06;
-        color += uEquatorColor * equatorGlow * 0.1;
-        color += uPolarColor * polarGlow * 0.09;
-        color += uRimColor * fresnel * (0.12 + uBrightness * 0.08 + uPulse * 0.06);
+        color += uBaseColor * centerLift * 0.24;
+        color += uWarmColor * bodyPresence * 0.08;
+        color += mix(uBaseColor, uWarmColor, 0.4) * bands * 0.05;
+        color += uEquatorColor * equatorGlow * 0.11;
+        color += uPolarColor * polarGlow * 0.07;
+        color += uRimColor * fresnel * (0.08 + uBrightness * 0.05 + uPulse * 0.04);
 
-        color *= 0.92 + uBrightness * 0.16;
-        color += diffuse * 0.03;
-        color = max(color, vec3(0.16, 0.14, 0.11));
+        color *= 0.97 + uBrightness * 0.14;
+        color += diffuse * 0.035;
+        color = max(color, vec3(0.22, 0.19, 0.14));
 
         gl_FragColor = vec4(color, 1.0);
       }
@@ -571,7 +573,7 @@ const aura = new THREE.Mesh(
     blending: THREE.AdditiveBlending,
     uniforms: {
       uColor: { value: new THREE.Color(0xfde5ba) },
-      uBrightness: { value: 0.55 },
+      uBrightness: { value: 0.32 },
     },
     vertexShader: `
       varying vec3 vNormal;
@@ -586,8 +588,8 @@ const aura = new THREE.Mesh(
       varying vec3 vNormal;
 
       void main() {
-        float fresnel = pow(1.0 - abs(vNormal.z), 2.6);
-        gl_FragColor = vec4(uColor * uBrightness * 1.3, fresnel * 0.48);
+        float fresnel = pow(1.0 - abs(vNormal.z), 3.1);
+        gl_FragColor = vec4(uColor * uBrightness, fresnel * 0.22);
       }
     `,
   }),
@@ -914,7 +916,7 @@ function updateVisualState(time, delta) {
   ringTrailMaterial.uniforms.uPulse.value = state.pulse;
   dustMaterial.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.8, 1.35, state.brightness);
   dustMaterial.uniforms.uPulse.value = state.pulse;
-  aura.material.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.18, 1.2, state.brightness + state.pulse * 0.18);
+  aura.material.uniforms.uBrightness.value = THREE.MathUtils.lerp(0.1, 0.42, state.brightness + state.pulse * 0.12);
   shockwave.material.uniforms.uTime.value = time;
   shockwave.material.uniforms.uPulse.value = state.pulse;
   shockwave.material.uniforms.uProgress.value = state.shockwaveActive ? state.shockwave : 0;
