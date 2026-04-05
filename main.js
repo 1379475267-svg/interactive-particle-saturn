@@ -388,7 +388,7 @@ const ringState = [];
 for (let i = 0; i < ringCount; i += 1) {
   const a = THREE.MathUtils.lerp(4.8, 11.8, Math.pow(Math.random(), 0.72));
   const e = THREE.MathUtils.lerp(0.02, 0.22, Math.pow(Math.random(), 1.6));
-  const inc = THREE.MathUtils.randFloatSpread(0.22);
+  const inc = THREE.MathUtils.randFloatSpread(0.08);
   const node = Math.random() * Math.PI * 2;
   const periapsis = Math.random() * Math.PI * 2;
   const meanAnomaly = Math.random() * Math.PI * 2;
@@ -634,8 +634,8 @@ const shockwave = new THREE.Mesh(
 shockwave.rotation.x = Math.PI / 2;
 shockwave.visible = false;
 ringGroup.add(shockwave);
-ringGroup.rotation.x = THREE.MathUtils.degToRad(56);
-ringGroup.rotation.z = THREE.MathUtils.degToRad(4);
+ringGroup.rotation.x = THREE.MathUtils.degToRad(52);
+ringGroup.rotation.z = THREE.MathUtils.degToRad(2);
 
 const aura = new THREE.Mesh(
   new THREE.SphereGeometry(3.9, 64, 64),
@@ -959,9 +959,9 @@ function updateVisualState(time, delta) {
     }
   }
 
-  state.orbitSpin += delta * (0.22 + state.scale * 0.08);
-  saturnSystem.rotation.y = pointer.rotY + state.orbitSpin;
-  saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.03 + pointer.smoothX * 0.04;
+  state.orbitSpin += delta * 0.045;
+  saturnSystem.rotation.y = pointer.rotY * 0.22 + state.orbitSpin;
+  saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.006 + pointer.smoothX * 0.008;
   saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.smoothY * 0.24;
   saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.smoothX * 0.42, 2.1, delta);
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
@@ -1042,7 +1042,7 @@ function updatePointerControl(delta) {
   state.openness = THREE.MathUtils.damp(state.openness, state.opennessTarget, 6, delta);
   pointer.rotX = THREE.MathUtils.damp(pointer.rotX, pointer.rotXTarget, 5.2, delta);
   pointer.rotY = THREE.MathUtils.damp(pointer.rotY, pointer.rotYTarget, 5.2, delta);
-  saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX, 4.8, delta);
+  saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX * 0.18, 4.8, delta);
 }
 
 function updateReadout() {
