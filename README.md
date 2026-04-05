@@ -1,149 +1,189 @@
 # 🪐 Interactive Particle Saturn
 
+> 🎬 一个基于 Three.js 的“有生命感”的土星交互系统
 > 🎬 A cinematic, gesture-driven particle system built with Three.js
-> 一个基于 Three.js 的“有生命感”的土星粒子交互作品
 
 ---
 
-## 🌍 Live Demo
+## 🌍 在线体验 | Live Demo
 
 👉 https://1379475267-svg.github.io/interactive-particle-saturn/
 
 ---
 
-## ✨ Highlights｜亮点
+## 🚀 项目定位 | Project Positioning
 
-* 🪐 Particle-based Saturn (core + orbital rings)
-  粒子构成的土星（核心 + 多层轨道环）
+这个项目不仅仅是视觉效果，而是一个交互系统：
 
-* 🖐️ Real-time hand gesture control
-  基于摄像头的实时手势控制（张手 / 握拳）
+This project is not just a visual effect, but an interactive system:
 
-* 🪐 Kepler-inspired orbital motion
-  参考开普勒直觉的轨道运动
+* 🌌 粒子驱动的三维交互系统
+  A particle-driven 3D interactive system
 
-* 💥 Chaos burst near camera
-  靠近屏幕时的混沌爆散效果
+* 🖐️ 基于手势的实时控制
+  Real-time gesture-based interaction
 
-* 🌫 Multi-layer motion system
-  多层粒子运动系统（核心 / 环 / 拖尾 / 尘埃）
-
-* 🎛 Smooth cinematic transitions
-  平滑过渡的电影感动态变化
+* 🎮 “物理 + 感知 + 视觉”的融合探索
+  Exploration of physics, perception, and visual interaction
 
 ---
 
-## 🎮 Interaction｜交互方式
+## 🧩 项目结构 | Project Structure
 
-| Action                  | Effect                              |
-| ----------------------- | ----------------------------------- |
-| 🖐️ Open hand           | Expand Saturn & increase brightness |
-| ✊ Close hand            | Contract Saturn & stabilize system  |
-| 🖱️ Drag                | Rotate camera view                  |
-| 💥 Double click / Space | Trigger chaos burst                 |
-| ⛶ Fullscreen            | Enter immersive mode                |
+| 模块         | 说明                                              |
+| ---------- | ----------------------------------------------- |
+| 🪐 主项目     | 当前完整交互系统                                        |
+| 🧪 手势 Demo | https://1379475267-svg.github.io/living-saturn/ |
+
+| Module          | Description                                     |
+| --------------- | ----------------------------------------------- |
+| 🪐 Main Project | Full interactive system                         |
+| 🧪 Gesture Demo | https://1379475267-svg.github.io/living-saturn/ |
+
+👉 Demo 用于验证手势控制，本项目用于完整表现
+👉 The demo validates gesture control, while this is the full experience
+
+---
+
+## ✨ 项目亮点 | Highlights
+
+* 🪐 粒子构成的土星（核心 + 多层环）
+  Particle-based Saturn (core + multi-layer rings)
+
+* 🖐️ 实时手势控制（MediaPipe）
+  Real-time hand tracking with MediaPipe
+
+* 🪐 类开普勒轨道运动
+  Kepler-inspired orbital motion
+
+* 💥 混沌爆散系统
+  Chaos burst system
+
+* 🌫 多层粒子结构（核心 / 环 / 拖尾 / 尘埃）
+  Multi-layer particle system (core / rings / trail / dust)
+
+* 🎛 电影级动态过渡
+  Cinematic transitions
+
+---
+
+## 🎮 交互方式 | Interaction
 
 | 操作         | 效果        |
 | ---------- | --------- |
 | 🖐️ 张开手    | 放大土星，提高亮度 |
 | ✊ 收拢手      | 收缩系统，恢复稳定 |
 | 🖱️ 拖拽     | 旋转视角      |
-| 💥 双击 / 空格 | 触发能量爆发    |
-| ⛶ 全屏       | 进入沉浸模式    |
+| 💥 双击 / 空格 | 触发爆发      |
+| ⛶ 全屏       | 沉浸模式      |
+
+| Action                  | Effect                   |
+| ----------------------- | ------------------------ |
+| 🖐️ Open hand           | Expand & brighten Saturn |
+| ✊ Close hand            | Contract & stabilize     |
+| 🖱️ Drag                | Rotate camera            |
+| 💥 Double click / Space | Trigger burst            |
+| ⛶ Fullscreen            | Immersive mode           |
 
 ---
 
-## 🧠 How It Works｜原理说明
+## 🧠 系统设计 | System Design
 
-### 1️⃣ Gesture Detection｜手势识别
+### 1️⃣ 手势层 | Gesture Layer
 
-* Uses MediaPipe Hand Landmarker
-* Tracks hand landmarks in real time
-* Converts hand openness into a normalized value
+使用 MediaPipe 进行手部关键点检测
+Extract hand landmarks using MediaPipe
 
-使用 MediaPipe 手部识别模型
-实时获取手部关键点
-并计算“手掌张开程度”作为控制变量
+计算手掌张开程度作为控制变量
+Compute hand openness as control input
 
 ---
 
-### 2️⃣ Interaction Mapping｜交互映射
+### 2️⃣ 映射层 | Mapping Layer
 
-* `openRatio → scale`
-* `openRatio → brightness`
-* `openRatio → chaos`
+```text
+openRatio → scale
+openRatio → brightness
+openRatio → chaos
+```
 
-手势张开程度映射为：
-
-* 尺度变化
-* 亮度变化
-* 混沌强度
+手势直接驱动视觉参数
+Gesture directly drives visual parameters
 
 ---
 
-### 3️⃣ Particle System｜粒子系统
-
-* Core: dense spherical particle cluster
-* Rings: layered orbital particle bands
-* Dust & trail: enhance depth and motion
-
-由多个层次构成：
+### 3️⃣ 粒子系统 | Particle System
 
 * 核心粒子球
+  Dense particle core
+
 * 多层轨道环
-* 拖尾与尘埃增强空间感
+  Multi-layer orbital rings
+
+* 拖尾与尘埃
+  Trail and dust for depth
 
 ---
 
-### 4️⃣ Chaos System｜混沌系统
+### 4️⃣ 混沌系统 | Chaos System
 
-* Triggered near screen or by interaction
-* Breaks orbital stability into controlled disorder
+从稳定轨道逐渐进入混沌状态
+Transition from stable orbit to controlled chaos
 
-在接近屏幕或交互增强时触发
-打破轨道秩序，形成可控的混沌状态
+实现“秩序 → 失控 → 重建”的过程
+Simulates order → chaos → reconstruction
 
 ---
 
-## 🧩 Tech Stack｜技术栈
+## 🧠 技术栈 | Tech Stack
 
-* Three.js (WebGL rendering)
-* MediaPipe (Hand Landmarker)
-* Custom GLSL shaders
-* ES Modules
+* Three.js (WebGL)
+* MediaPipe (Hand Tracking)
+* GLSL Shader
+* JavaScript (ES Modules)
 * GitHub Pages
 
 ---
 
-## ⚠️ Notes｜注意事项
+## ⚠️ 注意事项 | Notes
 
-* Camera permission is required
-  需要开启摄像头权限
+* 需要开启摄像头权限
+  Camera permission is required
 
-* Best experience on desktop Chrome
-  推荐使用桌面端 Chrome 浏览器
+* 推荐桌面端 Chrome
+  Best experience on desktop Chrome
 
-* First load may take a few seconds
-  首次加载需要时间（模型加载）
-
----
-
-## 🔥 Future Work｜未来优化
-
-* More gesture types
-  更多手势交互
-
-* Multi-hand interaction
-  双手控制
-
-* Audio-reactive mode
-  音频驱动模式
-
-* Better chaos choreography
-  更精细的混沌演出
+* 首次加载需要时间
+  Initial load may take a few seconds
 
 ---
 
-## 📄 License
+## 🔥 后续方向 | Future Work
 
-MIT
+* 🎵 音频驱动
+  Audio reactive system
+
+* 🤲 多手势控制
+  Multi-gesture interaction
+
+* 🌍 多场景扩展
+  Multi-scene system
+
+* 🧠 更真实物理
+  More realistic physics
+
+---
+
+## ## 👤 作者 | Author
+
+**费浩然 | Haoran Fei**
+
+* 🎓 电子信息科学与技术
+  Electronic Information Science & Technology
+
+* 💡 方向：交互图形 / 嵌入式 / 创意编程
+  Direction: Interactive Graphics / Embedded / Creative Coding
+
+* 🔗 https://github.com/1379475267-svg
+
+---
