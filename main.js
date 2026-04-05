@@ -182,20 +182,26 @@ const coreBody = new THREE.Mesh(
       uTime: { value: 0 },
       uBrightness: { value: 1 },
       uPulse: { value: 0 },
-      uDarkColor: { value: new THREE.Color(0x140d09) },
+      uBaseColor: { value: new THREE.Color(0xe7cf98) },
       uWarmColor: { value: new THREE.Color(0xf0bf72) },
+      uEquatorColor: { value: new THREE.Color(0xe4ba6e) },
+      uPolarColor: { value: new THREE.Color(0xf5e6bc) },
+      uShadowColor: { value: new THREE.Color(0x8f7856) },
       uCoolColor: { value: new THREE.Color(0xaedfff) },
+      uRimColor: { value: new THREE.Color(0xffefc2) },
     },
     vertexShader: `
       varying vec3 vNormal;
       varying vec3 vViewDir;
       varying vec3 vWorldPos;
+      varying vec3 vObjectPos;
 
       void main() {
         vec4 worldPosition = modelMatrix * vec4(position, 1.0);
         vec4 mvPosition = viewMatrix * worldPosition;
 
         vWorldPos = worldPosition.xyz;
+        vObjectPos = position;
         vNormal = normalize(normalMatrix * normal);
         vViewDir = normalize(-mvPosition.xyz);
 
@@ -206,40 +212,68 @@ const coreBody = new THREE.Mesh(
       uniform float uTime;
       uniform float uBrightness;
       uniform float uPulse;
-      uniform vec3 uDarkColor;
+      uniform vec3 uBaseColor;
       uniform vec3 uWarmColor;
+      uniform vec3 uEquatorColor;
+      uniform vec3 uPolarColor;
+      uniform vec3 uShadowColor;
       uniform vec3 uCoolColor;
+      uniform vec3 uRimColor;
 
       varying vec3 vNormal;
       varying vec3 vViewDir;
       varying vec3 vWorldPos;
+      varying vec3 vObjectPos;
 
       void main() {
         vec3 normal = normalize(vNormal);
         vec3 viewDir = normalize(vViewDir);
 
         float ndv = clamp(dot(normal, viewDir), 0.0, 1.0);
-        float fresnel = pow(1.0 - ndv, 2.8);
-        float innerGlow = pow(1.0 - ndv, 1.35);
+        float fresnel = pow(1.0 - ndv, 3.0);
 
-        float latBands =
-          0.5 +
-          0.5 * sin(vWorldPos.y * 1.9 + uTime * 0.28) * 0.16 +
-          0.5 * sin(vWorldPos.y * 4.2 - uTime * 0.18) * 0.08;
-        float swirl = sin(vWorldPos.x * 1.7 + vWorldPos.z * 1.3 + uTime * 0.42) * 0.06;
-        float pulse = sin(uTime * 1.6) * 0.5 + 0.5;
+        float lat = vObjectPos.y / 3.68;
+        float drift = uTime * 0.045;
 
-        vec3 baseColor = mix(uDarkColor, uWarmColor, 0.22 + latBands * 0.18 + swirl);
-        vec3 edgeColor = mix(uWarmColor, uCoolColor, 0.18 + uPulse * 0.2 + pulse * 0.08);
+        float bandA = sin(lat * 16.0 + drift);
+        float bandB = sin(lat * 29.0 - drift * 0.7);
+        float bandC = sin(lat * 52.0 + drift * 1.1);
+        float bands = bandA * 0.5 + bandB * 0.28 + bandC * 0.12;
+        bands = 0.5 + 0.5 * bands;
+        bands = smoothstep(0.18, 0.82, bands);
 
-        vec3 color = baseColor;
-        color += edgeColor * fresnel * (0.95 + uBrightness * 0.45 + uPulse * 0.35);
-        color += uWarmColor * innerGlow * 0.18;
-        color += uCoolColor * fresnel * fresnel * 0.08;
+        float equatorMask = 1.0 - smoothstep(0.1, 0.82, abs(lat));
+        float equatorGlow = pow(equatorMask, 1.6);
+        float polarMask = smoothstep(0.54, 0.98, abs(lat));
+        float polarGlow = pow(polarMask, 1.2);
 
-        float shadowFalloff = smoothstep(0.08, 0.72, ndv);
-        color *= mix(0.78, 1.18, shadowFalloff);
-        color *= 0.78 + uBrightness * 0.34;
+        vec3 lightDir = normalize(vec3(0.9, 0.35, 1.2));
+        float diffuse = max(dot(normal, lightDir), 0.0);
+        float wrapDiffuse = clamp((dot(normal, lightDir) + 0.35) / 1.35, 0.0, 1.0);
+        float centerLift = pow(ndv, 1.7);
+
+        vec3 baseColor = mix(uBaseColor, uWarmColor, 0.18);
+        vec3 bandColor = mix(uWarmColor, uBaseColor, bands * 0.58);
+        vec3 equatorColor = mix(bandColor, uEquatorColor, 0.5 + bands * 0.12);
+        vec3 polarColor = mix(uBaseColor, uPolarColor, 0.58);
+
+        vec3 color = mix(baseColor, bandColor, 0.42);
+        color = mix(color, equatorColor, equatorGlow * 0.32);
+        color = mix(color, polarColor, polarGlow * 0.22);
+
+        vec3 shadowMix = mix(uShadowColor, uCoolColor, 0.16);
+        color = mix(shadowMix, color, 0.48 + wrapDiffuse * 0.64);
+        color *= mix(0.88, 1.12, wrapDiffuse);
+
+        color += uBaseColor * centerLift * 0.18;
+        color += uWarmColor * bands * 0.06;
+        color += uEquatorColor * equatorGlow * 0.1;
+        color += uPolarColor * polarGlow * 0.09;
+        color += uRimColor * fresnel * (0.12 + uBrightness * 0.08 + uPulse * 0.06);
+
+        color *= 0.92 + uBrightness * 0.16;
+        color += diffuse * 0.03;
+        color = max(color, vec3(0.16, 0.14, 0.11));
 
         gl_FragColor = vec4(color, 1.0);
       }
