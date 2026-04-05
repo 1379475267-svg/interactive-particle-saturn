@@ -320,18 +320,18 @@ const coreBody = new THREE.Mesh(
     emissiveIntensity: 0.02,
   }),
 );
-coreBody.renderOrder = -9;
+coreBody.renderOrder = -10;
 coreGroup.add(coreBody);
 
 const coreOccluder = new THREE.Mesh(
-  new THREE.SphereGeometry(4.15, 64, 64),
+  new THREE.SphereGeometry(3.76, 64, 64),
   new THREE.MeshBasicMaterial({
     colorWrite: false,
     depthWrite: true,
     depthTest: true,
   }),
 );
-coreOccluder.renderOrder = -10;
+coreOccluder.renderOrder = -9;
 coreGroup.add(coreOccluder);
 
 const ringOccluder = new THREE.Mesh(
