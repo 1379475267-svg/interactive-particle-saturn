@@ -634,8 +634,8 @@ const shockwave = new THREE.Mesh(
 shockwave.rotation.x = Math.PI / 2;
 shockwave.visible = false;
 ringGroup.add(shockwave);
-ringGroup.rotation.x = THREE.MathUtils.degToRad(52);
-ringGroup.rotation.z = THREE.MathUtils.degToRad(2);
+ringGroup.rotation.x = THREE.MathUtils.degToRad(38);
+ringGroup.rotation.z = THREE.MathUtils.degToRad(0.5);
 
 const aura = new THREE.Mesh(
   new THREE.SphereGeometry(3.9, 64, 64),
@@ -699,9 +699,9 @@ const pointer = {
   normY: 0,
   smoothX: 0,
   smoothY: 0,
-  rotX: 0.22,
+  rotX: 0.08,
   rotY: 0,
-  rotXTarget: 0.22,
+  rotXTarget: 0.08,
   rotYTarget: 0,
 };
 
@@ -959,9 +959,9 @@ function updateVisualState(time, delta) {
     }
   }
 
-  state.orbitSpin += delta * 0.045;
-  saturnSystem.rotation.y = pointer.rotY * 0.22 + state.orbitSpin;
-  saturnSystem.rotation.z = Math.sin(time * 0.12) * 0.006 + pointer.smoothX * 0.008;
+  state.orbitSpin += delta * 0.006;
+  saturnSystem.rotation.y = pointer.rotY * 0.08 + state.orbitSpin;
+  saturnSystem.rotation.z = 0;
   saturnSystem.position.y = THREE.MathUtils.lerp(1.4, 0, state.intro) + pointer.smoothY * 0.24;
   saturnSystem.position.x = THREE.MathUtils.damp(saturnSystem.position.x, pointer.smoothX * 0.42, 2.1, delta);
   saturnSystem.scale.setScalar(THREE.MathUtils.lerp(0.9, 1 + state.pulse * 0.04, state.intro));
@@ -1042,7 +1042,7 @@ function updatePointerControl(delta) {
   state.openness = THREE.MathUtils.damp(state.openness, state.opennessTarget, 6, delta);
   pointer.rotX = THREE.MathUtils.damp(pointer.rotX, pointer.rotXTarget, 5.2, delta);
   pointer.rotY = THREE.MathUtils.damp(pointer.rotY, pointer.rotYTarget, 5.2, delta);
-  saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX * 0.18, 4.8, delta);
+  saturnSystem.rotation.x = THREE.MathUtils.damp(saturnSystem.rotation.x, pointer.rotX * 0.08, 4.8, delta);
 }
 
 function updateReadout() {
