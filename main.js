@@ -174,15 +174,76 @@ coreGroup.add(corePoints);
 
 const coreBody = new THREE.Mesh(
   new THREE.SphereGeometry(3.68, 64, 64),
-  new THREE.MeshPhysicalMaterial({
-    color: 0x120d09,
-    emissive: 0x1b130d,
-    emissiveIntensity: 0.08,
-    roughness: 0.95,
-    metalness: 0.02,
+  new THREE.ShaderMaterial({
     transparent: false,
     depthWrite: true,
     depthTest: true,
+    uniforms: {
+      uTime: { value: 0 },
+      uBrightness: { value: 1 },
+      uPulse: { value: 0 },
+      uDarkColor: { value: new THREE.Color(0x140d09) },
+      uWarmColor: { value: new THREE.Color(0xf0bf72) },
+      uCoolColor: { value: new THREE.Color(0xaedfff) },
+    },
+    vertexShader: `
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      varying vec3 vWorldPos;
+
+      void main() {
+        vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+        vec4 mvPosition = viewMatrix * worldPosition;
+
+        vWorldPos = worldPosition.xyz;
+        vNormal = normalize(normalMatrix * normal);
+        vViewDir = normalize(-mvPosition.xyz);
+
+        gl_Position = projectionMatrix * mvPosition;
+      }
+    `,
+    fragmentShader: `
+      uniform float uTime;
+      uniform float uBrightness;
+      uniform float uPulse;
+      uniform vec3 uDarkColor;
+      uniform vec3 uWarmColor;
+      uniform vec3 uCoolColor;
+
+      varying vec3 vNormal;
+      varying vec3 vViewDir;
+      varying vec3 vWorldPos;
+
+      void main() {
+        vec3 normal = normalize(vNormal);
+        vec3 viewDir = normalize(vViewDir);
+
+        float ndv = clamp(dot(normal, viewDir), 0.0, 1.0);
+        float fresnel = pow(1.0 - ndv, 2.8);
+        float innerGlow = pow(1.0 - ndv, 1.35);
+
+        float latBands =
+          0.5 +
+          0.5 * sin(vWorldPos.y * 1.9 + uTime * 0.28) * 0.16 +
+          0.5 * sin(vWorldPos.y * 4.2 - uTime * 0.18) * 0.08;
+        float swirl = sin(vWorldPos.x * 1.7 + vWorldPos.z * 1.3 + uTime * 0.42) * 0.06;
+        float pulse = sin(uTime * 1.6) * 0.5 + 0.5;
+
+        vec3 baseColor = mix(uDarkColor, uWarmColor, 0.22 + latBands * 0.18 + swirl);
+        vec3 edgeColor = mix(uWarmColor, uCoolColor, 0.18 + uPulse * 0.2 + pulse * 0.08);
+
+        vec3 color = baseColor;
+        color += edgeColor * fresnel * (0.95 + uBrightness * 0.45 + uPulse * 0.35);
+        color += uWarmColor * innerGlow * 0.18;
+        color += uCoolColor * fresnel * fresnel * 0.08;
+
+        float shadowFalloff = smoothstep(0.08, 0.72, ndv);
+        color *= mix(0.78, 1.18, shadowFalloff);
+        color *= 0.78 + uBrightness * 0.34;
+
+        gl_FragColor = vec4(color, 1.0);
+      }
+    `,
   }),
 );
 coreBody.renderOrder = -9;
@@ -800,6 +861,9 @@ function updateVisualState(time, delta) {
   coreOccluder.scale.setScalar(state.scale * 1.02);
   ringOccluder.scale.setScalar(state.scale * THREE.MathUtils.lerp(1.08, 1.14, state.pulse));
 
+  coreBody.material.uniforms.uTime.value = time;
+  coreBody.material.uniforms.uBrightness.value = state.brightness;
+  coreBody.material.uniforms.uPulse.value = state.pulse;
   coreMaterial.uniforms.uTime.value = time;
   coreMaterial.uniforms.uScale.value = 1;
   coreMaterial.uniforms.uChaos.value = state.chaos;
