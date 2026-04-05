@@ -117,11 +117,11 @@ function makeSaturnBodyTexture() {
   const ctx = canvas.getContext("2d");
 
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, "#f7e7bf");
-  gradient.addColorStop(0.22, "#f0d79f");
-  gradient.addColorStop(0.48, "#dfbf7d");
-  gradient.addColorStop(0.68, "#e8c98d");
-  gradient.addColorStop(1, "#f4e2b8");
+  gradient.addColorStop(0, "#f7e8c5");
+  gradient.addColorStop(0.22, "#f8ebc9");
+  gradient.addColorStop(0.48, "#f3dfb2");
+  gradient.addColorStop(0.68, "#efd8a7");
+  gradient.addColorStop(1, "#f7e8c5");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -129,16 +129,16 @@ function makeSaturnBodyTexture() {
     const y = (i / 69) * canvas.height;
     const bandHeight = canvas.height * (0.008 + Math.random() * 0.028);
     const alpha = 0.03 + Math.random() * 0.08;
-    const lightness = 62 + Math.random() * 22;
-    const hue = 38 + Math.random() * 10;
-    const sat = 42 + Math.random() * 18;
+    const lightness = 70 + Math.random() * 18;
+    const hue = 42 + Math.random() * 8;
+    const sat = 34 + Math.random() * 14;
     ctx.fillStyle = `hsla(${hue}, ${sat}%, ${lightness}%, ${alpha})`;
     ctx.fillRect(0, y, canvas.width, bandHeight);
   }
 
   for (let i = 0; i < 18; i += 1) {
     const y = (0.08 + i / 17 * 0.84) * canvas.height;
-    ctx.fillStyle = `rgba(255, 235, 190, ${0.018 + Math.random() * 0.03})`;
+    ctx.fillStyle = `rgba(255, 243, 214, ${0.02 + Math.random() * 0.025})`;
     ctx.fillRect(0, y, canvas.width, canvas.height * (0.02 + Math.random() * 0.035));
   }
 
@@ -313,7 +313,7 @@ const coreBody = new THREE.Mesh(
   new THREE.SphereGeometry(3.68, 96, 96),
   new THREE.MeshStandardMaterial({
     map: saturnMaps.bodyColor,
-    color: 0xf6e2b8,
+    color: 0xf7e7c0,
     roughness: 0.9,
     metalness: 0,
     emissive: 0x1c1308,
@@ -634,8 +634,8 @@ const shockwave = new THREE.Mesh(
 shockwave.rotation.x = Math.PI / 2;
 shockwave.visible = false;
 ringGroup.add(shockwave);
-ringGroup.rotation.x = THREE.MathUtils.degToRad(67);
-ringGroup.rotation.z = THREE.MathUtils.degToRad(14);
+ringGroup.rotation.x = THREE.MathUtils.degToRad(60);
+ringGroup.rotation.z = THREE.MathUtils.degToRad(8);
 
 const aura = new THREE.Mesh(
   new THREE.SphereGeometry(3.9, 64, 64),
