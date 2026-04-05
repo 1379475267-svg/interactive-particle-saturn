@@ -117,28 +117,28 @@ function makeSaturnBodyTexture() {
   const ctx = canvas.getContext("2d");
 
   const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-  gradient.addColorStop(0, "#f7e8c5");
-  gradient.addColorStop(0.22, "#f8ebc9");
-  gradient.addColorStop(0.48, "#f3dfb2");
-  gradient.addColorStop(0.68, "#efd8a7");
-  gradient.addColorStop(1, "#f7e8c5");
+  gradient.addColorStop(0, "#fbf1d8");
+  gradient.addColorStop(0.22, "#f8eac7");
+  gradient.addColorStop(0.48, "#f2dfae");
+  gradient.addColorStop(0.68, "#edd59f");
+  gradient.addColorStop(1, "#f8e8c4");
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   for (let i = 0; i < 70; i += 1) {
     const y = (i / 69) * canvas.height;
     const bandHeight = canvas.height * (0.008 + Math.random() * 0.028);
-    const alpha = 0.03 + Math.random() * 0.08;
-    const lightness = 70 + Math.random() * 18;
-    const hue = 42 + Math.random() * 8;
-    const sat = 34 + Math.random() * 14;
+    const alpha = 0.028 + Math.random() * 0.065;
+    const lightness = 74 + Math.random() * 16;
+    const hue = 44 + Math.random() * 7;
+    const sat = 30 + Math.random() * 12;
     ctx.fillStyle = `hsla(${hue}, ${sat}%, ${lightness}%, ${alpha})`;
     ctx.fillRect(0, y, canvas.width, bandHeight);
   }
 
   for (let i = 0; i < 18; i += 1) {
     const y = (0.08 + i / 17 * 0.84) * canvas.height;
-    ctx.fillStyle = `rgba(255, 243, 214, ${0.02 + Math.random() * 0.025})`;
+    ctx.fillStyle = `rgba(255, 246, 224, ${0.018 + Math.random() * 0.022})`;
     ctx.fillRect(0, y, canvas.width, canvas.height * (0.02 + Math.random() * 0.035));
   }
 
@@ -313,11 +313,11 @@ const coreBody = new THREE.Mesh(
   new THREE.SphereGeometry(3.68, 96, 96),
   new THREE.MeshStandardMaterial({
     map: saturnMaps.bodyColor,
-    color: 0xfaedcd,
+    color: 0xfcf0d2,
     roughness: 0.9,
     metalness: 0,
-    emissive: 0x2f2414,
-    emissiveIntensity: 0.045,
+    emissive: 0x4a3a1d,
+    emissiveIntensity: 0.055,
   }),
 );
 coreBody.renderOrder = -10;
@@ -634,8 +634,8 @@ const shockwave = new THREE.Mesh(
 shockwave.rotation.x = Math.PI / 2;
 shockwave.visible = false;
 ringGroup.add(shockwave);
-ringGroup.rotation.x = THREE.MathUtils.degToRad(59);
-ringGroup.rotation.z = THREE.MathUtils.degToRad(6);
+ringGroup.rotation.x = THREE.MathUtils.degToRad(56);
+ringGroup.rotation.z = THREE.MathUtils.degToRad(4);
 
 const aura = new THREE.Mesh(
   new THREE.SphereGeometry(3.9, 64, 64),
