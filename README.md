@@ -26,12 +26,10 @@ A cinematic Three.js experiment featuring a particle-based Saturn system with ge
 
 ---
 
-## 🔗 Live Demo
-
-👉 https://1379475267-svg.github.io/interactive-particle-saturn/
 ## 🌍 在线体验 | Live Demo
 
-👉 https://1379475267-svg.github.io/interactive-particle-saturn/
+- 🚀 Alibaba Cloud / 阿里云：http://47.109.136.234/projects/particle-saturn/
+- 🌐 GitHub Pages：https://1379475267-svg.github.io/interactive-particle-saturn/
 
 ---
 
@@ -57,12 +55,12 @@ This project is not just a visual effect, but an interactive system:
 | 模块         | 说明                                              |
 | ---------- | ----------------------------------------------- |
 | 🪐 主项目     | 当前完整交互系统                                        |
-| 🧪 手势 Demo | https://1379475267-svg.github.io/living-saturn/ |
+| 🧪 手势 Demo | http://47.109.136.234/projects/living-saturn/ |
 
 | Module          | Description                                     |
 | --------------- | ----------------------------------------------- |
 | 🪐 Main Project | Full interactive system                         |
-| 🧪 Gesture Demo | https://1379475267-svg.github.io/living-saturn/ |
+| 🧪 Gesture Demo | http://47.109.136.234/projects/living-saturn/ |
 
 👉 Demo 用于验证手势控制，本项目用于完整表现
 👉 The demo validates gesture control, while this is the full experience
